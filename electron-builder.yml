@@ -1,0 +1,17 @@
+appId: com.mediaplay.app
+productName: Mediaplay
+directories:
+  output: dist-electron
+files:
+  - electron/main.mjs
+  - electron/preload.cjs
+  - package.json
+extraResources:
+  - from: .next/standalone
+    to: server
+mac:
+  target: dmg
+win:
+  target: nsis
+linux:
+  target: AppImage
