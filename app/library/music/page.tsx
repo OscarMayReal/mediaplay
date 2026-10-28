@@ -1,10 +1,11 @@
 "use client"
 import { useMediaPlayerContext } from "@/components/mediaPlayerContext";
 import { Button } from "@/components/ui/button";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { regenerateLibraryDb } from "@/lib/libraryDb";
 import { useReadConfigFile, useReadFileJson } from "@/lib/useReadFile";
-import { PlayIcon } from "lucide-react";
+import { MoreHorizontalIcon, PlayIcon, RotateCcwIcon } from "lucide-react";
 import type { ICommonTagsResult } from "music-metadata";
 import { useEffect } from "react";
 
@@ -38,16 +39,31 @@ export default function LibraryPage() {
             regenerateLibraryDb({path: musicPath, extensions: audioExtensions}).then(library.reload)
         }
     }, [musicPath, dbPath, library.reload])
-    return <div className="w-full h-full flex flex-col">
-        <div className="w-full p-6 flex flex-row items-center">
+    return <div className="w-full h-full flex flex-col max-h-full">
+        <div className="w-full p-6 pb-2 flex flex-row items-center">
             <h1 className="text-2xl font-bold">Music</h1>
             <div className="flex-1" />
+            <DropdownMenu>
+                <DropdownMenuTrigger render={<Button variant={"ghost"} size="icon" className="mr-2"><MoreHorizontalIcon /></Button>} />
+                <DropdownMenuContent className="w-auto">
+                    <DropdownMenuItem onClick={() => {
+                        regenerateLibraryDb({path: musicPath, extensions: audioExtensions}).then(library.reload)
+                    }}><RotateCcwIcon />Rescan Library</DropdownMenuItem>
+                </DropdownMenuContent>
+            </DropdownMenu>
             <Button><PlayIcon />Play All</Button>
         </div>
-        <div className="flex flex-col p-6 pt-0">
-            {library.data && <Table>
-                <TableHeader>
-                    <TableRow>
+        <div className="flex flex-col p-0 pt-0 overflow-scroll max-h-full relative">
+            {library.data && <Table className="mb-18">
+                <TableHeader className="sticky top-0 z-10 bg-background overflow-visible h-[41px] [&_th]:shadow-[inset_0_-1px_0_var(--border)]">
+                    <TableRow className="hover:bg-background border-b-0" style={{
+                        borderBottomWidth: 0,
+                        maxHeight: 40,
+                        height: 40,
+                    }}>
+                        <TableHead className="w-5">
+
+                        </TableHead>
                         <TableHead className="w-[10px]">
                             #
                         </TableHead>
@@ -63,11 +79,14 @@ export default function LibraryPage() {
                         <TableHead>
                             Genre
                         </TableHead>
+                        <TableHead className="w-5">
+
+                        </TableHead>
                     </TableRow>
                 </TableHeader>
                 <TableBody>
                     {Object.entries(library.data.metadataStore).map(([key, value]) => {
-                        return <TableRow key={key} onClick={() => {
+                        return <TableRow className={MediaPlayerContext?.playerMetadata?.path == key ? "bg-foreground/5 hover:bg-foreground/5" : ""} key={key} onClick={() => {
                             console.log(value)
                             const player = MediaPlayerContext?.audioPlayerRef.current
                             if (!player || !musicPath) return
@@ -75,20 +94,26 @@ export default function LibraryPage() {
                             player.src = window.app.getLocalFileUrl(musicPath, key)
                             void player.play()
                         }}>
+                            <TableCell className="w-5">
+
+                            </TableCell>
                             <TableCell>
                                 {value?.track?.no || "-"}
                             </TableCell>
-                            <TableCell>
+                            <TableCell className="truncate max-w-0">
                                 {value?.title || "-"}
                             </TableCell>
-                            <TableCell>
+                            <TableCell className="truncate max-w-0">
                                 {value?.artist || "-"}
                             </TableCell>
-                            <TableCell>
+                            <TableCell className="truncate max-w-0">
                                 {value?.album || "-"}
                             </TableCell>
-                            <TableCell>
+                            <TableCell className="truncate max-w-0">
                                 {value?.genre || "-"}
+                            </TableCell>
+                            <TableCell className="w-5">
+
                             </TableCell>
                         </TableRow>
                     })}
