@@ -68,8 +68,10 @@ export default function LibraryPage() {
                 <TableBody>
                     {Object.entries(library.data.metadataStore).map(([key, value]) => {
                         return <TableRow key={key} onClick={() => {
+                            console.log(value)
                             const player = MediaPlayerContext?.audioPlayerRef.current
                             if (!player || !musicPath) return
+                            MediaPlayerContext.setPlayerMetadata({...value, path: key, image: musicPath + "/MediaPlayDb/pictures/" + key.replaceAll("/", "_")})
                             player.src = window.app.getLocalFileUrl(musicPath, key)
                             void player.play()
                         }}>

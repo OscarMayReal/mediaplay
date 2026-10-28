@@ -28,6 +28,8 @@ export async function regenerateLibraryDb({path, extensions}: {path: string, ext
             const cover = selectCover(metadata.common.picture)
             if (cover) {
                 window.fs.writeFileSync(path + "/MediaPlayDb/picture/" + file.replaceAll("/", "_") + "." + cover?.format.split("/")[1], cover?.data)
+                metadata.common.pictureFormat = cover?.format
+                metadata.common.pictureLoc = path + "/MediaPlayDb/picture/" + file.replaceAll("/", "_") + "." + cover?.format.split("/")[1]
             }
         }
         metadata.common.picture = undefined
