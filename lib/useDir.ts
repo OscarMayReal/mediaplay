@@ -12,7 +12,7 @@ export function useDir({path, recursive=false}: {path: string, recursive?: boole
             setFiles({loaded: false, data: data || null, reload})
         })
     }
-    const [files, setFiles] = useState<{loaded: Boolean, data: string[] | null, reload: () => void}>({loaded: false, data: [], reload})
+    const [files, setFiles] = useState<{loaded: boolean, data: string[] | null, reload: () => void}>({loaded: false, data: [], reload})
     useEffect(() => {
         if (path == null && path == undefined) return
         reload()

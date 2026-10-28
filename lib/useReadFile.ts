@@ -1,25 +1,33 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { getLibraries } from "./getLibraries";
 
-export function useReadFileJson({path}: {path: string}) {
-    function reload() {
-        if (window.fs.existsSync(path)) {
-            setFile({loaded: false, data: null, reload})
+export type LibraryConfig = {
+    libraries: { type: string; path: string; name: string }[];
+};
+
+export function useReadFileJson<T>({path}: {path: string | null | undefined}) {
+    const [data, setData] = useState<T | null>(null);
+    const [loaded, setLoaded] = useState(false);
+
+    const reload = useCallback(() => {
+        if (!path || typeof window === "undefined" || !window.fs) {
+            return;
         }
-        window.fsPromises.readFile(path, {
-            encoding: "utf-8"
-        }).then(data => {
-            setFile({loaded: false, data: JSON.parse(data) || null, reload})
-        })
-    }
-    const [file, setFile] = useState<{loaded: Boolean, data: Object | null, reload: () => void}>({loaded: false, data: null, reload})
+
+        window.fsPromises.readFile(path, {encoding: "utf-8"})
+            .then(contents => setData(JSON.parse(contents) as T))
+            .catch(() => setData(null))
+            .finally(() => setLoaded(true));
+    }, [path]);
+
     useEffect(() => {
-        reload()
-    }, [])
-    return file
+        reload();
+    }, [reload]);
+
+    return {loaded, data, reload};
 }
 
 export function useReadConfigFile() {
-    const libraries = getLibraries()
-    return useReadFileJson({path: libraries.documents + "/MediaPlay/library.json"})
+    const libraries = getLibraries();
+    return useReadFileJson<LibraryConfig>({path: libraries ? libraries.documents + "/MediaPlay/library.json" : null});
 }

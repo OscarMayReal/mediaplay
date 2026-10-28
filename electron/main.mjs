@@ -1,10 +1,16 @@
-import { app, BrowserWindow, ipcMain, shell } from "electron"
+import { app, BrowserWindow, ipcMain, net, protocol, shell } from "electron"
 import { spawn } from "node:child_process"
 import { createServer } from "node:net"
 import path from "node:path"
+import { fileURLToPath, pathToFileURL } from "node:url"
+
+protocol.registerSchemesAsPrivileged([
+  { scheme: "localfile", privileges: { standard: true, secure: true, stream: true, supportFetchAPI: true, corsEnabled: true } },
+])
 
 let serverProcess
 let serverUrl
+let appOrigin
 
 const libraryPaths = new Set(["music", "videos", "pictures", "documents", "downloads"])
 
@@ -65,6 +71,7 @@ async function appUrl() {
 
 async function createWindow() {
   const url = await appUrl()
+  appOrigin = new URL(url).origin
   const window = new BrowserWindow({
     width: 1200,
     height: 800,
@@ -103,7 +110,29 @@ async function createWindow() {
   await window.loadURL(url)
 }
 
-app.whenReady().then(createWindow).catch((error) => {
+app.whenReady().then(() => {
+  protocol.handle("localfile", async (request) => {
+    try {
+      const mediaUrl = new URL(request.url)
+      if (mediaUrl.host !== "media" || !appOrigin || (request.initiatorOrigin && request.initiatorOrigin !== appOrigin)) {
+        return new Response("Forbidden", { status: 403 })
+      }
+      const filePath = fileURLToPath(`file://${mediaUrl.pathname}`)
+      const response = await net.fetch(pathToFileURL(filePath).href, {
+        headers: request.headers.has("range")
+          ? { range: request.headers.get("range") }
+          : undefined,
+      })
+      const headers = new Headers(response.headers)
+      headers.set("Access-Control-Allow-Origin", appOrigin)
+      headers.set("Vary", "Origin")
+      return new Response(response.body, { status: response.status, headers })
+    } catch {
+      return new Response("Invalid local file URL", { status: 400 })
+    }
+  })
+  return createWindow()
+}).catch((error) => {
   console.error(error)
   app.quit()
 })

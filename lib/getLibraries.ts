@@ -1,4 +1,8 @@
 export function getLibraries() {
+    if (typeof window === "undefined" || !window.app) {
+        return null;
+    }
+
     return {
         music: window.app.getPath('music'),
         videos: window.app.getPath('videos'),

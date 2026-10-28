@@ -1,5 +1,7 @@
 import fs from "node:fs"
 import fsPromises from "node:fs/promises"
+import path from "node:path"
+import { pathToFileURL } from "node:url"
 import drivelist from "node-drivelist"
 import { ipcRenderer } from "electron"
 
@@ -8,6 +10,8 @@ type WindowStateEvent = "enter-full-screen" | "leave-full-screen" | "maximize" |
 
 const app = {
   getPath: (name: LibraryPath): string => ipcRenderer.sendSync("app:getLibraryPath", name),
+  getLocalFileUrl: (directory: string, file: string): string =>
+    `localfile://media${pathToFileURL(path.join(directory, file)).pathname}`,
 }
 
 window.electronAPI = {

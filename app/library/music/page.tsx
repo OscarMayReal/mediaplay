@@ -1,10 +1,14 @@
 "use client"
+import { useMediaPlayerContext } from "@/components/mediaPlayerContext";
 import { Button } from "@/components/ui/button";
-import { useDir } from "@/lib/useDir";
-import { useReadConfigFile } from "@/lib/useReadFile";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { regenerateLibraryDb } from "@/lib/libraryDb";
+import { useReadConfigFile, useReadFileJson } from "@/lib/useReadFile";
 import { PlayIcon } from "lucide-react";
-import { parseBlob, parseFile } from "music-metadata";
+import type { ICommonTagsResult } from "music-metadata";
 import { useEffect } from "react";
+
+type MusicLibraryDb = {version: string; metadataStore: Record<string, ICommonTagsResult>};
 
 const audioExtensions = [
   ".mp3",
@@ -24,31 +28,70 @@ const audioExtensions = [
 
 export default function LibraryPage() {
     const config = useReadConfigFile()
+    const musicPath = config.data?.libraries.find(item => item.type === "music")?.path
+    const dbPath = musicPath ? musicPath + "/MediaPlayDb/db.json" : null
+    const library = useReadFileJson<MusicLibraryDb>({path: dbPath})
+    const MediaPlayerContext = useMediaPlayerContext()
     useEffect(() => {
-        console.log(config)
-    }, [config])
-    const libraryFiles = useDir({path: config?.data?.libraries?.find(item => item.type == "music").path, recursive: true})
-    useEffect(() => {
-        const files = libraryFiles.data?.filter(item => {
-            for (var extension of audioExtensions) {
-                if (item.endsWith(extension)) {
-                    return true
-                }
-            }
-        });
-        (async () => {
-            for (const file of files) {
-                const mediafile = window.fs.readFileSync(config?.data?.libraries?.find(item => item.type == "music").path + "/" + file)
-                const metadata = await parseBlob(new Blob([mediafile]))
-                console.log(metadata)
-            }
-        })();
-    }, [libraryFiles])
+        if (!musicPath || !dbPath || !window.fs) return
+        if (!window.fs.existsSync(dbPath)) {
+            regenerateLibraryDb({path: musicPath, extensions: audioExtensions}).then(library.reload)
+        }
+    }, [musicPath, dbPath, library.reload])
     return <div className="w-full h-full flex flex-col">
         <div className="w-full p-6 flex flex-row items-center">
             <h1 className="text-2xl font-bold">Music</h1>
             <div className="flex-1" />
             <Button><PlayIcon />Play All</Button>
+        </div>
+        <div className="flex flex-col p-6 pt-0">
+            {library.data && <Table>
+                <TableHeader>
+                    <TableRow>
+                        <TableHead className="w-[10px]">
+                            #
+                        </TableHead>
+                        <TableHead>
+                            Title
+                        </TableHead>
+                        <TableHead>
+                            Artist
+                        </TableHead>
+                        <TableHead>
+                            Album
+                        </TableHead>
+                        <TableHead>
+                            Genre
+                        </TableHead>
+                    </TableRow>
+                </TableHeader>
+                <TableBody>
+                    {Object.entries(library.data.metadataStore).map(([key, value]) => {
+                        return <TableRow key={key} onClick={() => {
+                            const player = MediaPlayerContext?.audioPlayerRef.current
+                            if (!player || !musicPath) return
+                            player.src = window.app.getLocalFileUrl(musicPath, key)
+                            void player.play()
+                        }}>
+                            <TableCell>
+                                {value?.track?.no || "-"}
+                            </TableCell>
+                            <TableCell>
+                                {value?.title || "-"}
+                            </TableCell>
+                            <TableCell>
+                                {value?.artist || "-"}
+                            </TableCell>
+                            <TableCell>
+                                {value?.album || "-"}
+                            </TableCell>
+                            <TableCell>
+                                {value?.genre || "-"}
+                            </TableCell>
+                        </TableRow>
+                    })}
+                </TableBody>
+            </Table>}
         </div>
     </div>
 }

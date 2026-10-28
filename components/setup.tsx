@@ -13,8 +13,9 @@ export function SetupDialog() {
     const [isOpen, setIsOpen] = useState(false)
     useEffect(() => {
         const libraries = getLibraries()
+        if (!libraries || !window.fs) return
         if (!window.fs.existsSync(libraries.documents + "/MediaPlay")) {
-            setIsOpen(true)
+            queueMicrotask(() => setIsOpen(true))
         }
     }, [])
     const [step, setStep] = useState(0)
@@ -34,6 +35,7 @@ export function SetupDialog() {
 function Step0() {
     useEffect(() => {
         const libraries = getLibraries()
+        if (!libraries || !window.fs) return
         if (!window.fs.existsSync(libraries.documents + "/MediaPlay")) {
             window.fs.mkdirSync(libraries.documents + "/MediaPlay")
         }
@@ -46,18 +48,20 @@ function Step0() {
 
 function Step1() {
     const [selectedLibraries, setSelectedLibraries] = useState<{type: string, path: string, name: string}[]>([])
+    const libraries = getLibraries()
     useEffect(() => {
+        if (!libraries || !window.fs) return
         if (!window.fs.existsSync(libraries.documents + "/MediaPlay/library.json")) {
             window.fs.writeFileSync(libraries.documents + "/MediaPlay/library.json", JSON.stringify({
                 libraries: []
             }))
         } else if (window.fs.existsSync(libraries.documents + "/MediaPlay/library.json")) {
-            var library = JSON.parse(window.fs.readFileSync(libraries.documents + "/MediaPlay/library.json", "utf8"))
+            const library = JSON.parse(window.fs.readFileSync(libraries.documents + "/MediaPlay/library.json", "utf8"))
             library.libraries = selectedLibraries
             window.fs.writeFileSync(libraries.documents + "/MediaPlay/library.json", JSON.stringify(library))
         }
-    }, [selectedLibraries])
-    const libraries = getLibraries()
+    }, [selectedLibraries, libraries?.documents])
+    if (!libraries) return null
     return <div className="flex flex-col gap-2">
         <h1 className="text-lg">Configure Your Content</h1>
         <div>MediaPlay can automatically add default locations to your library</div>

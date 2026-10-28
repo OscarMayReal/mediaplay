@@ -7,18 +7,19 @@ import { CableIcon, SettingsIcon } from "lucide-react"
 
 export default function DevicePage() {
     const drive = usePortableMediaDrive({autoReload: true})
-    const [config, setConfig] = useState<object | null>(null)
+    const [config, setConfig] = useState<{setupComplete?: boolean} | null>(null)
     useEffect(() => {
-        if (drive.drive) {
-            if (config == null && window.fs.existsSync(drive.drive.mountpoint + "/.MediaPlay/device.json")) {
-                setConfig(JSON.parse(window.fs.readFileSync(drive.drive.mountpoint + "/.MediaPlay/device.json", "utf8")))
-            } else if (config == null && !window.fs.existsSync(drive.drive.mountpoint + "/.MediaPlay/device.json")) {
-                setConfig({
-                    setupComplete: false
-                })
-            }
-        }
-    }, [drive])
+        if (!drive.drive || !window.fsPromises) return
+        let cancelled = false
+        window.fsPromises.readFile(drive.drive.mountpoint + "/.MediaPlay/device.json", "utf8")
+            .then(contents => {
+                if (!cancelled) setConfig(JSON.parse(contents))
+            })
+            .catch(() => {
+                if (!cancelled) setConfig({setupComplete: false})
+            })
+        return () => { cancelled = true }
+    }, [drive.drive?.mountpoint])
     if (config !== null && !config.setupComplete) {
         return <DeviceSetupPage />
     }
