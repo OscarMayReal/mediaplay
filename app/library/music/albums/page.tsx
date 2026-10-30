@@ -220,7 +220,7 @@ function AlbumTrackTable({albumTitle}: {albumTitle: string}) {
                     {/* <TableCell className="w-5">
 
                     </TableCell> */}
-                    <TableCell>
+                    <TableCell className="w-[10px]">
                         {value?.track?.no || "-"}
                     </TableCell>
                     <TableCell className="truncate max-w-0">

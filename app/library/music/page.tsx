@@ -4,8 +4,9 @@ import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { regenerateLibraryDb } from "@/lib/libraryDb";
+import { usePortableMediaDrive } from "@/lib/useDrives";
 import { useReadConfigFile, useReadFileJson } from "@/lib/useReadFile";
-import { MoreHorizontalIcon, PlayIcon, RotateCcwIcon } from "lucide-react";
+import { CableIcon, MoreHorizontalIcon, PlayIcon, RotateCcwIcon } from "lucide-react";
 import type { ICommonTagsResult } from "music-metadata";
 import { useEffect } from "react";
 
@@ -28,6 +29,7 @@ const audioExtensions = [
 ];
 
 export default function LibraryPage() {
+    const drive = usePortableMediaDrive({autoReload: true})
     const config = useReadConfigFile()
     const musicPath = config.data?.libraries.find(item => item.type === "music")?.path
     const dbPath = musicPath ? musicPath + "/MediaPlayDb/db.json" : null
@@ -111,6 +113,29 @@ export default function LibraryPage() {
                             </TableCell>
                             <TableCell className="truncate max-w-0">
                                 {value?.genre || "-"}
+                            </TableCell>
+                            <TableCell className="w-5 p-0" onClick={(ev) => {
+                                ev.stopPropagation()
+                            }}>
+                                <DropdownMenu>
+                                    <DropdownMenuTrigger render={<Button variant={"ghost"} size={"icon-sm"}><MoreHorizontalIcon /></Button>} />
+                                    <DropdownMenuContent className="w-auto">
+                                        <DropdownMenuItem disabled={!drive.drive?.mountpoint} onClick={async() => {
+                                            if (!window.fs.existsSync(`${drive.drive?.mountpoint}/Music/${value.albumartist}/${value.album}`)) {
+                                                window.fs.mkdirSync(`${drive.drive?.mountpoint}/Music/${value.albumartist}/${value.album}`, {
+                                                    recursive: true
+                                                })
+                                                console.log("created")
+                                            }
+                                            if (!window.fs.existsSync(`${drive.drive?.mountpoint}/music/${value.albumartist}/${value.album}/${key.split("/")[key.split("/").length - 1]}`)) {
+                                                await window.fsPromises.cp(musicPath + "/" + key, `${drive.drive?.mountpoint}/Music/${value.albumartist}/${value.album}/${key.split("/")[key.split("/").length - 1]}`)
+                                                console.log("copied")
+                                            }
+                                        }}>
+                                            <CableIcon />Sync to player
+                                        </DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
                             </TableCell>
                             <TableCell className="w-5">
 
