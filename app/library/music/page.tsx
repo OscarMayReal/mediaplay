@@ -41,7 +41,7 @@ export default function LibraryPage() {
     }, [musicPath, dbPath, library.reload])
     return <div className="w-full h-full flex flex-col max-h-full">
         <div className="w-full p-6 pb-2 flex flex-row items-center">
-            <h1 className="text-2xl font-bold">Music</h1>
+            <h1 className="text-2xl font-bold">All Music</h1>
             <div className="flex-1" />
             <DropdownMenu>
                 <DropdownMenuTrigger render={<Button variant={"ghost"} size="icon" className="mr-2"><MoreHorizontalIcon /></Button>} />
@@ -86,7 +86,7 @@ export default function LibraryPage() {
                 </TableHeader>
                 <TableBody>
                     {Object.entries(library.data.metadataStore).map(([key, value]) => {
-                        return <TableRow className={MediaPlayerContext?.playerMetadata?.path == key ? "bg-foreground/5 hover:bg-foreground/5" : ""} key={key} onClick={() => {
+                        return <TableRow className={(MediaPlayerContext?.playerMetadata?.path == key ? "bg-foreground/5 hover:bg-foreground/5" : "even:bg-foreground/2") + " border-transparent hover:bg-foreground/5"} key={key} onClick={() => {
                             console.log(value)
                             const player = MediaPlayerContext?.audioPlayerRef.current
                             if (!player || !musicPath) return

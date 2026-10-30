@@ -7,7 +7,7 @@ export default function LibraryLayout({children}: {children: React.ReactNode}) {
     const pathName = usePathname()
     const router = useRouter()
     return <SidebarProvider className="h-full w-full">
-        <Sidebar collapsible="none" className="border-r-1">
+        <Sidebar collapsible="none" className="border-r-1 shrink-0">
             <SidebarContent>
                 <SidebarGroup>
                     <SidebarGroupLabel>Music</SidebarGroupLabel>
