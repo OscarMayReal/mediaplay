@@ -155,10 +155,91 @@ function AlbumItem({value, setActiveAlbum, activeAlbum}: {value: ICommonTagsResu
                     <img className="max-w-[200px] max-h-[200px] w-[200px] h-[200px] shrink block rounded-md" src={window.app.getLocalFileUrl(value.pictureLoc, "")}/>
                     <Button variant={"ghost"} className="text-white justify-start hover:bg-black/20 hover:text-white"><PlayIcon />Play Album</Button>
                 </div>
-                <div className="flex flex-col gap-3 max-w-full min-w-0">
-                    <h1 className="text-3xl text-white font-medium truncate max-w-full">{value.album}</h1>
+                <div className="flex flex-col gap-1 max-w-full min-w-0 w-full">
+                    <h1 className="text-3xl text-white font-medium truncate max-w-full shrink-0">{value.album}</h1>
+                    <h2 className="text-md text-white truncate max-w-full shrink-0">{value.albumartist}</h2>
+                    <AlbumTrackTable albumTitle={value.album} />
                 </div>
             </div>
         </div>}
     </div>
+}
+
+function AlbumTrackTable({albumTitle}: {albumTitle: string}) {
+    const config = useReadConfigFile()
+    const musicPath = config.data?.libraries.find(item => item.type === "music")?.path
+    const dbPath = musicPath ? musicPath + "/MediaPlayDb/db.json" : null
+    const library = useReadFileJson<MusicLibraryDb>({path: dbPath})
+    const MediaPlayerContext = useMediaPlayerContext()
+    useEffect(() => {
+        if (!musicPath || !dbPath || !window.fs) return
+        if (!window.fs.existsSync(dbPath)) {
+            regenerateLibraryDb({path: musicPath, extensions: audioExtensions}).then(library.reload)
+        }
+    }, [musicPath, dbPath, library.reload])
+    return <>{library.data && <Table className="mb-18 text-white">
+        {/* <TableHeader className="sticky top-0 z-10 bg-background overflow-visible h-[41px] [&_th]:shadow-[inset_0_-1px_0_var(--border)]">
+            <TableRow className="hover:bg-background border-b-0" style={{
+                borderBottomWidth: 0,
+                maxHeight: 40,
+                height: 40,
+            }}>
+                <TableHead className="w-5">
+
+                </TableHead>
+                <TableHead className="w-[10px]">
+                    #
+                </TableHead>
+                <TableHead>
+                    Title
+                </TableHead>
+                <TableHead>
+                    Artist
+                </TableHead>
+                <TableHead>
+                    Album
+                </TableHead>
+                <TableHead>
+                    Genre
+                </TableHead>
+                <TableHead className="w-5">
+
+                </TableHead>
+            </TableRow>
+        </TableHeader> */}
+        <TableBody>
+            {Object.entries(library.data.metadataStore).filter(item => item[1].album == albumTitle).map(([key, value]) => {
+                return <TableRow className={(MediaPlayerContext?.playerMetadata?.path == key ? "bg-white/5 hover:bg-white/5" : "even:bg-white/2") + " border-transparent hover:bg-white/5"} key={key} onClick={() => {
+                    console.log(value)
+                    const player = MediaPlayerContext?.audioPlayerRef.current
+                    if (!player || !musicPath) return
+                    MediaPlayerContext.setPlayerMetadata({...value, path: key, image: musicPath + "/MediaPlayDb/pictures/" + key.replaceAll("/", "_"), type: "music"})
+                    player.src = window.app.getLocalFileUrl(musicPath, key)
+                    void player.play()
+                }}>
+                    {/* <TableCell className="w-5">
+
+                    </TableCell> */}
+                    <TableCell>
+                        {value?.track?.no || "-"}
+                    </TableCell>
+                    <TableCell className="truncate max-w-0">
+                        {value?.title || "-"}
+                    </TableCell>
+                    <TableCell className="truncate max-w-0">
+                        {value?.artist || "-"}
+                    </TableCell>
+                    <TableCell className="truncate max-w-0">
+                        {value?.album || "-"}
+                    </TableCell>
+                    <TableCell className="truncate max-w-0">
+                        {value?.genre || "-"}
+                    </TableCell>
+                    {/* <TableCell className="w-5">
+
+                    </TableCell> */}
+                </TableRow>
+            })}
+        </TableBody>
+    </Table>}</>
 }

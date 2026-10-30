@@ -90,7 +90,7 @@ export default function LibraryPage() {
                             console.log(value)
                             const player = MediaPlayerContext?.audioPlayerRef.current
                             if (!player || !musicPath) return
-                            MediaPlayerContext.setPlayerMetadata({...value, path: key, image: musicPath + "/MediaPlayDb/pictures/" + key.replaceAll("/", "_")})
+                            MediaPlayerContext.setPlayerMetadata({...value, path: key, image: musicPath + "/MediaPlayDb/pictures/" + key.replaceAll("/", "_"), type: "music"})
                             player.src = window.app.getLocalFileUrl(musicPath, key)
                             void player.play()
                         }}>

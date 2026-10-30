@@ -1,4 +1,7 @@
 import { app, BrowserWindow, ipcMain, net, protocol, shell } from "electron"
+import { createReadStream } from "node:fs"
+import { stat } from "node:fs/promises"
+import { Readable } from "node:stream"
 import { spawn } from "node:child_process"
 import { createServer } from "node:net"
 import path from "node:path"
@@ -16,6 +19,14 @@ const libraryPaths = new Set(["music", "videos", "pictures", "documents", "downl
 
 ipcMain.on("app:getLibraryPath", (event, name) => {
   event.returnValue = libraryPaths.has(name) ? app.getPath(name) : null
+})
+
+ipcMain.handle("app:openWindow", async (_event, route) => {
+  if (typeof route !== "string" || !route.startsWith("/") || route.startsWith("//")) return
+  const url = await appUrl()
+  const target = new URL(route, url)
+  if (target.origin !== new URL(url).origin) return
+  await createWindow(route)
 })
 
 function availablePort() {
@@ -69,7 +80,7 @@ async function appUrl() {
   return url
 }
 
-async function createWindow() {
+async function createWindow(route = "/") {
   const url = await appUrl()
   appOrigin = new URL(url).origin
   const window = new BrowserWindow({
@@ -107,7 +118,7 @@ async function createWindow() {
   ]) {
     window.on(event, () => window.webContents.send("window:state-changed", event))
   }
-  await window.loadURL(url)
+  await window.loadURL(new URL(route, url).toString())
 }
 
 app.whenReady().then(() => {
@@ -118,12 +129,36 @@ app.whenReady().then(() => {
         return new Response("Forbidden", { status: 403 })
       }
       const filePath = fileURLToPath(`file://${mediaUrl.pathname}`)
-      const response = await net.fetch(pathToFileURL(filePath).href, {
-        headers: request.headers.has("range")
-          ? { range: request.headers.get("range") }
-          : undefined,
-      })
+      const range = request.headers.get("range")
+      if (range) {
+        const fileStat = await stat(filePath)
+        const match = /^bytes=(\d*)-(\d*)$/.exec(range)
+        if (!match || fileStat.size === 0) {
+          return new Response(null, { status: 416, headers: { "Content-Range": `bytes */${fileStat.size}` } })
+        }
+
+        let start = match[1] ? Number(match[1]) : Math.max(0, fileStat.size - Number(match[2]))
+        let end = match[2] && match[1] ? Number(match[2]) : fileStat.size - 1
+        if (start >= fileStat.size || end < start) {
+          return new Response(null, { status: 416, headers: { "Content-Range": `bytes */${fileStat.size}` } })
+        }
+        end = Math.min(end, fileStat.size - 1)
+
+        const fileResponse = await net.fetch(pathToFileURL(filePath).href)
+        await fileResponse.body?.cancel()
+        const headers = new Headers(fileResponse.headers)
+        headers.set("Accept-Ranges", "bytes")
+        headers.set("Content-Range", `bytes ${start}-${end}/${fileStat.size}`)
+        headers.set("Content-Length", String(end - start + 1))
+        headers.set("Access-Control-Allow-Origin", appOrigin)
+        headers.set("Vary", "Origin")
+        const body = Readable.toWeb(createReadStream(filePath, { start, end }))
+        return new Response(body, { status: 206, headers })
+      }
+
+      const response = await net.fetch(pathToFileURL(filePath).href)
       const headers = new Headers(response.headers)
+      headers.set("Accept-Ranges", "bytes")
       headers.set("Access-Control-Allow-Origin", appOrigin)
       headers.set("Vary", "Origin")
       return new Response(response.body, { status: response.status, headers })

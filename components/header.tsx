@@ -1,7 +1,7 @@
 "use client"
 import { ButtonGroup } from "./ui/button-group";
 import { Button } from "./ui/button";
-import { CableIcon, FastForwardIcon, LibraryBigIcon, MusicIcon, PauseIcon, PlayIcon, RewindIcon, SearchIcon } from "lucide-react";
+import { CableIcon, FastForwardIcon, LibraryBigIcon, MusicIcon, PauseIcon, PlayIcon, RewindIcon, SearchIcon, SquareArrowOutUpRightIcon } from "lucide-react";
 import { useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { useDrives } from "@/lib/useDrives";
@@ -21,6 +21,7 @@ export default function AppHeader() {
     const router = useRouter()
     const drives = useDrives({autoReload: true})
     const pathName = usePathname()
+    if (pathName.startsWith("/videoPlayer")) return null
     return (
         <header className="h-[50px] bg-muted border-b-1 w-full flex flex-row items-center titlebar shrink-0 relative">
             <ButtonGroup className="ml-22 nodrag">
@@ -38,6 +39,7 @@ export default function AppHeader() {
             {drives.drives.find(drive => drive.name?.endsWith("_MP")) && <Button variant="outline" size="icon" className="ml-2 nodrag" onClick={() => router.push(pathName !== "/device" ? "/device" : "/library")}>{pathName !== "/device" ? <CableIcon /> : <LibraryBigIcon />}</Button>}
             <HeaderMediaArea />
             <div className="flex-1" />
+            {/* <Button variant="outline" size="icon" className="mr-2 nodrag" aria-label="Open this page in a new window" title="Open this page in a new window" onClick={() => void window.app.openWindow(pathName)}><SquareArrowOutUpRightIcon /></Button> */}
             <InputGroup className="w-[250px] mr-2 bg-white nodrag">
                 <InputGroupAddon>
                     <SearchIcon />
