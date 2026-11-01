@@ -6,8 +6,13 @@ import { cn } from "@/lib/utils";
 import AppHeader from "@/components/header";
 import { SetupDialog } from "@/components/setup";
 import { MediaPlayerProvider } from "@/components/mediaPlayerContext";
+import type { Metadata } from "next";
 
 const figtree = Figtree({subsets:['latin'],variable:'--font-sans'})
+
+export const metadata: Metadata = {
+  icons: {icon: "/icon.svg"},
+}
 
 const fontMono = Geist_Mono({
   subsets: ["latin"],

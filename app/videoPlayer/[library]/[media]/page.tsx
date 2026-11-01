@@ -5,9 +5,9 @@ import { Progress } from "@/components/ui/progress";
 import { Slider } from "@/components/ui/slider";
 import { FastForwardIcon, PauseIcon, PlayIcon, RewindIcon } from "lucide-react";
 import { IAudioMetadata, parseBlob } from "music-metadata";
-import { Usable, use, useEffect, useRef, useState } from "react";
+import { use, useEffect, useRef, useState } from "react";
 
-export default function MediaPlayer({params}: {params: Usable<{library: string, media: string}>}) {
+export default function MediaPlayer({params}: {params: Promise<{library: string, media: string}>}) {
     const {library, media} = use(params)
     const videoPlayerRef = useRef<HTMLVideoElement>(null)
     const [hoverVisible, setHoverVisible] = useState(false)
@@ -128,7 +128,7 @@ export default function MediaPlayer({params}: {params: Usable<{library: string, 
                 </Button>
             </ButtonGroup>
             <Slider value={playerState.time} onValueChange={(value) => {
-                if (!videoPlayerRef.current) return
+                if (!videoPlayerRef.current || typeof value !== "number") return
                 videoPlayerRef.current.currentTime = value
             }} max={playerState.duration} className="w-full mx-4" />
         </div>

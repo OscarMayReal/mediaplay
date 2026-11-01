@@ -13,6 +13,7 @@ const app = {
   getLocalFileUrl: (directory: string, file: string): string =>
     `localfile://media${pathToFileURL(path.join(directory, file)).pathname}`,
   openWindow: (route: string): Promise<void> => ipcRenderer.invoke("app:openWindow", route),
+  selectDirectory: (): Promise<string | null> => ipcRenderer.invoke("app:selectDirectory"),
 }
 
 window.electronAPI = {

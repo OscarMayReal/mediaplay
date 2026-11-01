@@ -1,8 +1,16 @@
-# Next.js template
+# MediaPlay
 
-This is a Next.js template with shadcn/ui.
+MediaPlay is a music and video player, with support for syning to MP3 players
 
-## Desktop app
+some features are still not implemented, but have buttons in the UI that do nothing
+
+## How to use
+
+when setting up, make sure the libraries are enabled.
+
+to use the media player sync, use disk utility and make sure the device is named {devicename}_MP
+
+## Desktop app (for running dev)
 
 Start the Electron app with live Next.js development:
 
@@ -23,21 +31,3 @@ bun run desktop:package
 ```
 
 The packaged app runs the Next.js standalone server on a local port. Build installers on the operating system they target. Distributable installers may need code signing for normal installation on macOS and Windows.
-
-## Adding components
-
-To add components to your app, run the following command:
-
-```bash
-npx shadcn@latest add button
-```
-
-This will place the ui components in the `components` directory.
-
-## Using components
-
-To use the components in your app, import them as follows:
-
-```tsx
-import { Button } from "@/components/ui/button";
-```

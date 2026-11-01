@@ -1,15 +1,16 @@
 "use client"
 import { ButtonGroup } from "./ui/button-group";
 import { Button } from "./ui/button";
-import { CableIcon, FastForwardIcon, LibraryBigIcon, MusicIcon, PauseIcon, PlayIcon, RewindIcon, SearchIcon, SquareArrowOutUpRightIcon } from "lucide-react";
+import { CableIcon, FastForwardIcon, FolderCogIcon, LibraryBigIcon, MusicIcon, PauseIcon, PlayIcon, RewindIcon, SettingsIcon, SquareArrowOutUpRightIcon } from "lucide-react";
 import { useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { useDrives } from "@/lib/useDrives";
-import { InputGroup, InputGroupAddon, InputGroupInput } from "./ui/input-group";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "./ui/dropdown-menu";
 import { Item, ItemContent, ItemDescription, ItemMedia, ItemTitle } from "./ui/item";
 import { useMediaPlayerContext } from "./mediaPlayerContext";
 import { Slider } from "./ui/slider";
 import { Progress } from "./ui/progress";
+import { ManageLibrariesDialog } from "./manageLibrariesDialog";
 
 function formatTime(seconds: number) {
     const totalSeconds = Math.floor(seconds)
@@ -21,11 +22,15 @@ export default function AppHeader() {
     const router = useRouter()
     const drives = useDrives({autoReload: true})
     const pathName = usePathname()
+    const [manageLibrariesOpen, setManageLibrariesOpen] = useState(false)
     if (pathName.startsWith("/videoPlayer")) return null
     return (
         <header className="h-[50px] bg-muted border-b-1 w-full flex flex-row items-center titlebar shrink-0 relative">
             <ButtonGroup className="ml-22 nodrag">
-                <Button variant="outline" size="icon"><RewindIcon /></Button>
+                <Button variant="outline" size="icon" aria-label="Rewind 10 seconds" onClick={() => {
+                    if (!mediaPlayerContext) return
+                    mediaPlayerContext.seek(mediaPlayerContext.playerState.time - 10)
+                }}><RewindIcon /></Button>
                 <Button variant="outline" size="icon" onClick={() => {
                     if (!mediaPlayerContext) return
                     if (mediaPlayerContext.playerState.paused) {
@@ -34,18 +39,28 @@ export default function AppHeader() {
                         mediaPlayerContext.audioPlayerRef.current?.pause()
                     }
                 }}>{mediaPlayerContext?.playerState.paused ? <PlayIcon /> : <PauseIcon />}</Button>
-                <Button variant="outline" size="icon"><FastForwardIcon /></Button>
+                <Button variant="outline" size="icon" aria-label="Forward 10 seconds" onClick={() => {
+                    if (!mediaPlayerContext) return
+                    mediaPlayerContext.seek(mediaPlayerContext.playerState.time + 10)
+                }}><FastForwardIcon /></Button>
             </ButtonGroup>
             {drives.drives.find(drive => drive.name?.endsWith("_MP")) && <Button variant="outline" size="icon" className="ml-2 nodrag" onClick={() => router.push(pathName !== "/device" ? "/device" : "/library")}>{pathName !== "/device" ? <CableIcon /> : <LibraryBigIcon />}</Button>}
             <HeaderMediaArea />
             <div className="flex-1" />
             {/* <Button variant="outline" size="icon" className="mr-2 nodrag" aria-label="Open this page in a new window" title="Open this page in a new window" onClick={() => void window.app.openWindow(pathName)}><SquareArrowOutUpRightIcon /></Button> */}
-            <InputGroup className="w-[250px] mr-2 bg-white nodrag">
+            {/* <InputGroup className="w-[250px] mr-2 bg-white nodrag">
                 <InputGroupAddon>
                     <SearchIcon />
                 </InputGroupAddon>
                 <InputGroupInput placeholder="Search" />
-            </InputGroup>
+            </InputGroup> */}
+            <DropdownMenu>
+                <DropdownMenuTrigger render={<Button variant="outline" size="icon" className="mr-2 nodrag" aria-label="Manage libraries"><SettingsIcon /></Button>} />
+                <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => setManageLibrariesOpen(true)}><FolderCogIcon />Manage libraries</DropdownMenuItem>
+                </DropdownMenuContent>
+            </DropdownMenu>
+            <ManageLibrariesDialog open={manageLibrariesOpen} onOpenChange={setManageLibrariesOpen} />
         </header>
     )
 }

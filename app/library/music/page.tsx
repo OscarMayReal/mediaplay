@@ -3,14 +3,14 @@ import { useMediaPlayerContext } from "@/components/mediaPlayerContext";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { regenerateLibraryDb } from "@/lib/libraryDb";
+import { regenerateLibraryDb, type MediaLibraryTags } from "@/lib/libraryDb";
 import { usePortableMediaDrive } from "@/lib/useDrives";
+import { updateDeviceLastSync } from "@/lib/updateDeviceLastSync";
 import { useReadConfigFile, useReadFileJson } from "@/lib/useReadFile";
 import { CableIcon, MoreHorizontalIcon, PlayIcon, RotateCcwIcon } from "lucide-react";
-import type { ICommonTagsResult } from "music-metadata";
 import { useEffect } from "react";
 
-type MusicLibraryDb = {version: string; metadataStore: Record<string, ICommonTagsResult>};
+type MusicLibraryDb = {version: string; metadataStore: Record<string, MediaLibraryTags>};
 
 const audioExtensions = [
   ".mp3",
@@ -49,7 +49,7 @@ export default function LibraryPage() {
                 <DropdownMenuTrigger render={<Button variant={"ghost"} size="icon" className="mr-2"><MoreHorizontalIcon /></Button>} />
                 <DropdownMenuContent className="w-auto">
                     <DropdownMenuItem onClick={() => {
-                        regenerateLibraryDb({path: musicPath, extensions: audioExtensions}).then(library.reload)
+                        if (musicPath) regenerateLibraryDb({path: musicPath, extensions: audioExtensions}).then(library.reload)
                     }}><RotateCcwIcon />Rescan Library</DropdownMenuItem>
                 </DropdownMenuContent>
             </DropdownMenu>
@@ -121,15 +121,13 @@ export default function LibraryPage() {
                                     <DropdownMenuTrigger render={<Button variant={"ghost"} size={"icon-sm"}><MoreHorizontalIcon /></Button>} />
                                     <DropdownMenuContent className="w-auto">
                                         <DropdownMenuItem disabled={!drive.drive?.mountpoint} onClick={async() => {
-                                            if (!window.fs.existsSync(`${drive.drive?.mountpoint}/Music/${value.albumartist}/${value.album}`)) {
-                                                window.fs.mkdirSync(`${drive.drive?.mountpoint}/Music/${value.albumartist}/${value.album}`, {
-                                                    recursive: true
-                                                })
-                                                console.log("created")
-                                            }
-                                            if (!window.fs.existsSync(`${drive.drive?.mountpoint}/music/${value.albumartist}/${value.album}/${key.split("/")[key.split("/").length - 1]}`)) {
-                                                await window.fsPromises.cp(musicPath + "/" + key, `${drive.drive?.mountpoint}/Music/${value.albumartist}/${value.album}/${key.split("/")[key.split("/").length - 1]}`)
-                                                console.log("copied")
+                                            const mountpoint = drive.drive?.mountpoint
+                                            if (!mountpoint || !musicPath) return
+                                            const target = `${mountpoint}/Music/${value.albumartist}/${value.album}/${key.split("/").pop()}`
+                                            if (!window.fs.existsSync(target)) {
+                                                await window.fsPromises.mkdir(target.slice(0, target.lastIndexOf("/")), {recursive: true})
+                                                await window.fsPromises.cp(musicPath + "/" + key, target)
+                                                await updateDeviceLastSync(mountpoint)
                                             }
                                         }}>
                                             <CableIcon />Sync to player

@@ -3,6 +3,7 @@ import { getLibraries } from "./getLibraries";
 
 export type LibraryConfig = {
     libraries: { type: string; path: string; name: string }[];
+    libraryLocations?: Record<string, string>;
 };
 
 export function useReadFileJson<T>({path}: {path: string | null | undefined}) {

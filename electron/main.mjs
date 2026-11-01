@@ -1,8 +1,7 @@
-import { app, BrowserWindow, ipcMain, net, protocol, shell } from "electron"
+import { app, BrowserWindow, dialog, ipcMain, net, protocol, shell, utilityProcess } from "electron"
 import { createReadStream } from "node:fs"
 import { stat } from "node:fs/promises"
 import { Readable } from "node:stream"
-import { spawn } from "node:child_process"
 import { createServer } from "node:net"
 import path from "node:path"
 import { fileURLToPath, pathToFileURL } from "node:url"
@@ -12,6 +11,7 @@ protocol.registerSchemesAsPrivileged([
 ])
 
 let serverProcess
+let serverExited = false
 let serverUrl
 let appOrigin
 
@@ -29,6 +29,14 @@ ipcMain.handle("app:openWindow", async (_event, route) => {
   await createWindow(route)
 })
 
+ipcMain.handle("app:selectDirectory", async (event) => {
+  const window = BrowserWindow.fromWebContents(event.sender)
+  const result = await dialog.showOpenDialog(window ?? undefined, {
+    properties: ["openDirectory", "createDirectory"],
+  })
+  return result.canceled ? null : result.filePaths[0] ?? null
+})
+
 function availablePort() {
   return new Promise((resolve, reject) => {
     const server = createServer()
@@ -42,7 +50,7 @@ function availablePort() {
 
 async function waitForServer(url) {
   for (let attempt = 0; attempt < 100; attempt++) {
-    if (serverProcess?.exitCode !== null) {
+    if (serverExited) {
       throw new Error("The Next.js server exited before it was ready")
     }
     try {
@@ -63,15 +71,19 @@ async function appUrl() {
     ? path.join(process.resourcesPath, "server")
     : path.join(app.getAppPath(), ".next/standalone")
 
-  serverProcess = spawn(process.execPath, [path.join(serverDirectory, "server.js")], {
+  serverExited = false
+  serverProcess = utilityProcess.fork(path.join(serverDirectory, "server.js"), [], {
     cwd: serverDirectory,
     env: {
       ...process.env,
-      ELECTRON_RUN_AS_NODE: "1",
       HOSTNAME: "127.0.0.1",
       PORT: String(port),
     },
     stdio: "inherit",
+    serviceName: "Mediaplay server",
+  })
+  serverProcess.once("exit", () => {
+    serverExited = true
   })
 
   const url = `http://127.0.0.1:${port}`
@@ -89,7 +101,8 @@ async function createWindow(route = "/") {
     minWidth: 640,
     minHeight: 480,
     show: false,
-    trafficLightPosition: { x: 17, y: 17 },
+    // Center the native controls in the 50px custom header.
+    trafficLightPosition: { x: 17, y: 18 },
     titleBarOverlay: true,
     titleBarStyle: "hidden",
     webPreferences: {

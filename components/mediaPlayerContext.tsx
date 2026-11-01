@@ -9,6 +9,7 @@ type PlayerMetadata = {
     pictureLoc?: string;
     path?: string;
     image?: string;
+    type?: "music" | "video";
 };
 
 type MediaPlayerContextValue = {

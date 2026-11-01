@@ -3,14 +3,13 @@ import { useMediaPlayerContext } from "@/components/mediaPlayerContext";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { regenerateLibraryDb } from "@/lib/libraryDb";
+import { regenerateLibraryDb, type MediaLibraryTags } from "@/lib/libraryDb";
 import { useReadConfigFile, useReadFileJson } from "@/lib/useReadFile";
 import { FastAverageColor } from "fast-average-color";
 import { MoreHorizontalIcon, PlayIcon, RotateCcwIcon } from "lucide-react";
-import type { ICommonTagsResult } from "music-metadata";
 import { useEffect, useRef, useState } from "react";
 
-type MusicLibraryDb = {version: string; metadataStore: Record<string, ICommonTagsResult>};
+type MusicLibraryDb = {version: string; metadataStore: Record<string, MediaLibraryTags>};
 
 const audioExtensions = [
   ".mp3",
@@ -34,7 +33,7 @@ export default function LibraryPage() {
     const dbPath = musicPath ? musicPath + "/MediaPlayDb/db.json" : null
     const library = useReadFileJson<MusicLibraryDb>({path: dbPath})
     const MediaPlayerContext = useMediaPlayerContext()
-    const [activeAlbum, setActiveAlbum] = useState(null)
+    const [activeAlbum, setActiveAlbum] = useState("")
     useEffect(() => {
         if (!musicPath || !dbPath || !window.fs) return
         if (!window.fs.existsSync(dbPath)) {
@@ -49,7 +48,7 @@ export default function LibraryPage() {
                 <DropdownMenuTrigger render={<Button variant={"ghost"} size="icon" className="mr-2"><MoreHorizontalIcon /></Button>} />
                 <DropdownMenuContent className="w-auto">
                     <DropdownMenuItem onClick={() => {
-                        regenerateLibraryDb({path: musicPath, extensions: audioExtensions}).then(library.reload)
+                        if (musicPath) regenerateLibraryDb({path: musicPath, extensions: audioExtensions}).then(library.reload)
                     }}><RotateCcwIcon />Rescan Library</DropdownMenuItem>
                 </DropdownMenuContent>
             </DropdownMenu>
@@ -128,21 +127,22 @@ export default function LibraryPage() {
     </div>
 }
 
-function AlbumItem({value, setActiveAlbum, activeAlbum}: {value: ICommonTagsResult, setActiveAlbum: (data: string) => void, activeAlbum: string}) {
+function AlbumItem({value, setActiveAlbum, activeAlbum}: {value: MediaLibraryTags, setActiveAlbum: (data: string) => void, activeAlbum: string}) {
     const albumImageElement = useRef<HTMLImageElement>(null)
     const [averageColor, setAverageColor] = useState("")
     useEffect(() => {
         const fac = new FastAverageColor();
+        if (!value.pictureLoc) return
         fac.getColorAsync(window.app.getLocalFileUrl(value.pictureLoc, ""))
             .then(color => {
                 setAverageColor(color.hex)
             })
     }, [])
     return <div className="flex flex-col h-fit" onClick={() => {
-        setActiveAlbum(value.album)
+        if (value.album) setActiveAlbum(value.album)
     }}>
         <div className="flex flex-col relative">
-            <img className="min-w-[200px] max-w-[300px] shrink block rounded-md" src={window.app.getLocalFileUrl(value.pictureLoc, "")} ref={albumImageElement} />
+            <img className="min-w-[200px] max-w-[300px] shrink block rounded-md" src={value.pictureLoc ? window.app.getLocalFileUrl(value.pictureLoc, "") : ""} ref={albumImageElement} />
             <div className="w-full truncate mt-2">{value.album}</div>
             <div className="w-full truncate mt-0 text-sm text-muted-foreground">{value.albumartist}</div>
             {activeAlbum == value.album && <svg xmlns="http://w3.org" viewBox="0 0 100 100" width="30" height="30" className="absolute -bottom-8 left-[50%] -translate-x-1/2">
@@ -152,13 +152,13 @@ function AlbumItem({value, setActiveAlbum, activeAlbum}: {value: ICommonTagsResu
         {activeAlbum == value.album && <div className="h-[400px] mt-6 col-span-full right-0 left-0">
             <div className="h-[400px] flex flex-row right-0 left-0 absolute p-6 gap-6" style={{width: "calc(100vw - 256px)", backgroundColor: `color-mix(${averageColor} 75%, black 25%`}}>
                 <div className="flex flex-col gap-3">
-                    <img className="max-w-[200px] max-h-[200px] w-[200px] h-[200px] shrink block rounded-md" src={window.app.getLocalFileUrl(value.pictureLoc, "")}/>
+                    <img className="max-w-[200px] max-h-[200px] w-[200px] h-[200px] shrink block rounded-md" src={value.pictureLoc ? window.app.getLocalFileUrl(value.pictureLoc, "") : ""}/>
                     <Button variant={"ghost"} className="text-white justify-start hover:bg-black/20 hover:text-white"><PlayIcon />Play Album</Button>
                 </div>
                 <div className="flex flex-col gap-1 max-w-full min-w-0 w-full">
                     <h1 className="text-3xl text-white font-medium truncate max-w-full shrink-0">{value.album}</h1>
                     <h2 className="text-md text-white truncate max-w-full shrink-0">{value.albumartist}</h2>
-                    <AlbumTrackTable albumTitle={value.album} />
+                    {value.album && <AlbumTrackTable albumTitle={value.album} />}
                 </div>
             </div>
         </div>}

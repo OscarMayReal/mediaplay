@@ -1,11 +1,11 @@
 import http from 'node:http';
-import { SsdpAdvertiser, UpnpMediaServer, ROOT_OBJECT_ID } from '@sonn-audio/node-upnp';
+import { SsdpAdvertiser, UpnpMediaServer, ROOT_OBJECT_ID, type ContentProvider } from '@sonn-audio/node-upnp';
 import fs from "node:fs"
 import getPath from 'platform-folders';
 
 
-const provider = {
-  async browse(objectId, offset, limit) {
+const provider: ContentProvider = {
+  async browse(objectId: string, offset: number, limit: number) {
     // if (objectId !== ROOT_OBJECT_ID) return { objects: [], total: 0 };
     if (objectId == ROOT_OBJECT_ID) return { objects: [
         {
@@ -29,12 +29,14 @@ const provider = {
     ], total: 3 };
     if (objectId == "music") {
         const mediaPlayLibraryConfig = JSON.parse(fs.readFileSync(getPath('documents') + "/MediaPlay/library.json", "utf-8"))
-        const LibraryDb = JSON.parse(fs.readFileSync(mediaPlayLibraryConfig.libraries.find(item => item.type == "music").path + "/MediaPlayDb/db.json", "utf-8"))
+        const musicLibrary = mediaPlayLibraryConfig.libraries.find((item: {type: string; path: string}) => item.type == "music")
+        if (!musicLibrary) return {objects: [], total: 0}
+        const LibraryDb: {metadataStore: Record<string, {title?: string; artist?: string}>} = JSON.parse(fs.readFileSync(musicLibrary.path + "/MediaPlayDb/db.json", "utf-8"))
       return {
         objects: Object.entries(LibraryDb.metadataStore).map(([key, value]) => {return {
             id: "music/" + key,
             parentId: "music",
-            title: value.title,
+            title: value.title || key.split("/").pop() || "Untitled",
             artist: value.artist,
             upnpClass: 'object.item.audioItem.musicTrack',
             resources: [{ url: 'http://host/media/1.mp3', protocolInfo: 'http-get:*:audio/mpeg:*' }],
@@ -42,6 +44,7 @@ const provider = {
         total: Object.entries(LibraryDb.metadataStore).length,
       }
     };
+    return {objects: [], total: 0}
   },
 };
 
@@ -54,7 +57,7 @@ const server = new UpnpMediaServer({
 
 // Route requests under your base path to the framework:
 const httpServer = http.createServer((req, res) => {
-  const path = new URL(req.url, 'http://x').pathname;
+  const path = new URL(req.url ?? "/", 'http://x').pathname;
   if (path.startsWith('/dms/')) server.handle(req, res, path.slice('/dms/'.length));
 });
 httpServer.listen(7799);

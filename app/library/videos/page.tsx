@@ -3,13 +3,14 @@ import { useMediaPlayerContext } from "@/components/mediaPlayerContext";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { regenerateLibraryDb } from "@/lib/libraryDb";
+import { regenerateLibraryDb, type MediaLibraryTags } from "@/lib/libraryDb";
+import { usePortableMediaDrive } from "@/lib/useDrives";
+import { updateDeviceLastSync } from "@/lib/updateDeviceLastSync";
 import { useReadConfigFile, useReadFileJson } from "@/lib/useReadFile";
-import { MoreHorizontalIcon, PlayIcon, RotateCcwIcon } from "lucide-react";
-import type { ICommonTagsResult } from "music-metadata";
-import { useEffect } from "react";
+import { CableIcon, MoreHorizontalIcon, PlayIcon, RotateCcwIcon } from "lucide-react";
+import { useEffect, useState } from "react";
 
-type MusicLibraryDb = {version: string; metadataStore: Record<string, ICommonTagsResult>};
+type MusicLibraryDb = {version: string; metadataStore: Record<string, MediaLibraryTags>};
 
 const videoExtensions = [
   ".mp4",
@@ -25,10 +26,28 @@ const videoExtensions = [
 
 export default function LibraryPage() {
     const config = useReadConfigFile()
+    const drive = usePortableMediaDrive({autoReload: true})
+    const [supportsVideoSync, setSupportsVideoSync] = useState(false)
     const videoPath = config.data?.libraries.find(item => item.type === "videos")?.path
     const dbPath = videoPath ? videoPath + "/MediaPlayDb/db.json" : null
     const library = useReadFileJson<MusicLibraryDb>({path: dbPath})
     const MediaPlayerContext = useMediaPlayerContext()
+    useEffect(() => {
+        const mountpoint = drive.drive?.mountpoint
+        if (!mountpoint || !window.fsPromises) {
+            setSupportsVideoSync(false)
+            return
+        }
+        let cancelled = false
+        window.fsPromises.readFile(mountpoint + "/.MediaPlay/device.json", "utf8")
+            .then(contents => {
+                if (!cancelled) setSupportsVideoSync(JSON.parse(contents)?.formatSupport?.video === true)
+            })
+            .catch(() => {
+                if (!cancelled) setSupportsVideoSync(false)
+            })
+        return () => { cancelled = true }
+    }, [drive.drive?.mountpoint])
     useEffect(() => {
         if (!videoPath || !dbPath || !window.fs) return
         if (!window.fs.existsSync(dbPath)) {
@@ -43,7 +62,7 @@ export default function LibraryPage() {
                 <DropdownMenuTrigger render={<Button variant={"ghost"} size="icon" className="mr-2"><MoreHorizontalIcon /></Button>} />
                 <DropdownMenuContent className="w-auto">
                     <DropdownMenuItem onClick={() => {
-                        regenerateLibraryDb({path: videoPath, extensions: videoExtensions}).then(library.reload)
+                        if (videoPath) regenerateLibraryDb({path: videoPath, extensions: videoExtensions}).then(library.reload)
                     }}><RotateCcwIcon />Rescan Library</DropdownMenuItem>
                 </DropdownMenuContent>
             </DropdownMenu>
@@ -78,6 +97,9 @@ export default function LibraryPage() {
                         <TableHead className="w-5">
 
                         </TableHead>
+                        <TableHead className="w-5">
+
+                        </TableHead>
                     </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -89,7 +111,7 @@ export default function LibraryPage() {
                             // MediaPlayerContext.setPlayerMetadata({...value, path: key, image: videoPath + "/MediaPlayDb/pictures/" + key.replaceAll("/", "_"), type: "video"})
                             // player.src = window.app.getLocalFileUrl(videoPath, key)
                             // void player.play()
-                            window.app.openWindow(`/videoPlayer/${videoPath.replaceAll("/", "::slash::")}/${key.replaceAll("/", "::slash::")}`)
+                            if (videoPath) window.app.openWindow(`/videoPlayer/${videoPath.replaceAll("/", "::slash::")}/${key.replaceAll("/", "::slash::")}`)
                         }}>
                             <TableCell className="w-5">
 
@@ -108,6 +130,21 @@ export default function LibraryPage() {
                             </TableCell> */}
                             <TableCell className="truncate max-w-0">
                                 {value?.genre || "-"}
+                            </TableCell>
+                            <TableCell className="w-5 p-0" onClick={ev => ev.stopPropagation()}>
+                                <DropdownMenu>
+                                    <DropdownMenuTrigger render={<Button variant="ghost" size="icon-sm"><MoreHorizontalIcon /></Button>} />
+                                    <DropdownMenuContent className="w-auto">
+                                        <DropdownMenuItem disabled={!supportsVideoSync || !drive.drive?.mountpoint} onClick={async () => {
+                                            const mountpoint = drive.drive?.mountpoint
+                                            if (!supportsVideoSync || !mountpoint || !videoPath) return
+                                            const target = mountpoint + "/Videos/" + key
+                                            await window.fsPromises.mkdir(target.slice(0, target.lastIndexOf("/")), {recursive: true})
+                                            await window.fsPromises.cp(videoPath + "/" + key, target)
+                                            await updateDeviceLastSync(mountpoint)
+                                        }}><CableIcon />Sync to player</DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
                             </TableCell>
                             <TableCell className="w-5">
 

@@ -48,19 +48,31 @@ function Step0() {
 
 function Step1() {
     const [selectedLibraries, setSelectedLibraries] = useState<{type: string, path: string, name: string}[]>([])
+    const [librariesInitialized, setLibrariesInitialized] = useState(false)
     const libraries = getLibraries()
     useEffect(() => {
         if (!libraries || !window.fs) return
-        if (!window.fs.existsSync(libraries.documents + "/MediaPlay/library.json")) {
-            window.fs.writeFileSync(libraries.documents + "/MediaPlay/library.json", JSON.stringify({
-                libraries: []
-            }))
-        } else if (window.fs.existsSync(libraries.documents + "/MediaPlay/library.json")) {
-            const library = JSON.parse(window.fs.readFileSync(libraries.documents + "/MediaPlay/library.json", "utf8"))
-            library.libraries = selectedLibraries
-            window.fs.writeFileSync(libraries.documents + "/MediaPlay/library.json", JSON.stringify(library))
+        const libraryPath = libraries.documents + "/MediaPlay/library.json"
+        if (window.fs.existsSync(libraryPath)) {
+            const library = JSON.parse(window.fs.readFileSync(libraryPath, "utf8"))
+            setSelectedLibraries(Array.isArray(library.libraries) ? library.libraries : [])
+        } else {
+            setSelectedLibraries([
+                {path: libraries.music, type: "music", name: "Music"},
+                {path: libraries.videos, type: "videos", name: "Videos"},
+            ])
         }
-    }, [selectedLibraries, libraries?.documents])
+        setLibrariesInitialized(true)
+    }, [libraries?.documents])
+    useEffect(() => {
+        if (!librariesInitialized || !libraries || !window.fs) return
+        const libraryPath = libraries.documents + "/MediaPlay/library.json"
+        const library = window.fs.existsSync(libraryPath)
+            ? JSON.parse(window.fs.readFileSync(libraryPath, "utf8"))
+            : {}
+        library.libraries = selectedLibraries
+        window.fs.writeFileSync(libraryPath, JSON.stringify(library))
+    }, [selectedLibraries, librariesInitialized, libraries?.documents])
     if (!libraries) return null
     return <div className="flex flex-col gap-2">
         <h1 className="text-lg">Configure Your Content</h1>
