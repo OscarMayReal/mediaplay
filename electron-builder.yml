@@ -17,6 +17,7 @@ mac:
   icon: assets/mac-icon.png
   target: dmg
 win:
+  icon: assets/windows-icon.ico
   target: nsis
 linux:
   target: AppImage

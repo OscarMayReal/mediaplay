@@ -1,7 +1,8 @@
 import http from 'node:http';
 import { SsdpAdvertiser, UpnpMediaServer, ROOT_OBJECT_ID, type ContentProvider } from '@sonn-audio/node-upnp';
 import fs from "node:fs"
-import getPath from 'platform-folders';
+import os from "node:os"
+import path from "node:path"
 
 
 const provider: ContentProvider = {
@@ -28,7 +29,7 @@ const provider: ContentProvider = {
         }
     ], total: 3 };
     if (objectId == "music") {
-        const mediaPlayLibraryConfig = JSON.parse(fs.readFileSync(getPath('documents') + "/MediaPlay/library.json", "utf-8"))
+        const mediaPlayLibraryConfig = JSON.parse(fs.readFileSync(path.join(os.homedir(), "Documents", "MediaPlay", "library.json"), "utf-8"))
         const musicLibrary = mediaPlayLibraryConfig.libraries.find((item: {type: string; path: string}) => item.type == "music")
         if (!musicLibrary) return {objects: [], total: 0}
         const LibraryDb: {metadataStore: Record<string, {title?: string; artist?: string}>} = JSON.parse(fs.readFileSync(musicLibrary.path + "/MediaPlayDb/db.json", "utf-8"))
