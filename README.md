@@ -31,3 +31,13 @@ bun run desktop:package
 ```
 
 The packaged app runs the Next.js standalone server on a local port. Build installers on the operating system they target. Distributable installers may need code signing for normal installation on macOS and Windows.
+
+### macOS: "Mediaplay is damaged and can't be opened"
+
+If you downloaded the prebuilt macOS `.dmg` from the project's GitHub Releases and macOS says the app is damaged, first open the DMG and drag `Mediaplay.app` into Applications. Only do this for a release you trust. Then open Terminal and run:
+
+```bash
+xattr -cr /Applications/Mediaplay.app
+```
+
+Then open Mediaplay again. If macOS shows a standard security warning instead, Control-click the app in Applications, choose **Open**, and confirm **Open** in the dialog.
