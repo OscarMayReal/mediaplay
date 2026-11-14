@@ -128,8 +128,13 @@ export default function LibraryPage() {
 }
 
 function AlbumItem({value, setActiveAlbum, activeAlbum}: {value: MediaLibraryTags, setActiveAlbum: (data: string) => void, activeAlbum: string}) {
+    const config = useReadConfigFile()
+    const musicPath = config.data?.libraries.find(item => item.type === "music")?.path
+    const dbPath = musicPath ? musicPath + "/MediaPlayDb/db.json" : null
+    const library = useReadFileJson<MusicLibraryDb>({path: dbPath})
     const albumImageElement = useRef<HTMLImageElement>(null)
     const [averageColor, setAverageColor] = useState("")
+    const MediaPlayerContext = useMediaPlayerContext()
     useEffect(() => {
         const fac = new FastAverageColor();
         if (!value.pictureLoc) return
@@ -153,7 +158,18 @@ function AlbumItem({value, setActiveAlbum, activeAlbum}: {value: MediaLibraryTag
             <div className="h-[400px] flex flex-row right-0 left-0 absolute p-6 gap-6" style={{width: "calc(100vw - 256px)", backgroundColor: `color-mix(${averageColor} 75%, black 25%`}}>
                 <div className="flex flex-col gap-3">
                     <img className="max-w-[200px] max-h-[200px] w-[200px] h-[200px] shrink block rounded-md" src={value.pictureLoc ? window.app.getLocalFileUrl(value.pictureLoc, "") : ""}/>
-                    <Button variant={"ghost"} className="text-white justify-start hover:bg-black/20 hover:text-white"><PlayIcon />Play Album</Button>
+                    <Button variant={"ghost"} className="text-white justify-start hover:bg-black/20 hover:text-white" onClick={() => {
+                        if (!musicPath || !MediaPlayerContext || !MediaPlayerContext.audioPlayerRef.current) return
+                        const newplaylist = []
+                        for (const [itemkey, itemvalue] of Object.entries(library.data.metadataStore).filter(item => item[1].album == value.album)) {
+                            newplaylist.push({...itemvalue, path: itemkey, image: musicPath + "/MediaPlayDb/pictures/" + itemkey.replaceAll("/", "_"), type: "music", src: window.app.getLocalFileUrl(musicPath, itemkey)})
+                        }
+                        MediaPlayerContext?.setPlaylist(newplaylist)
+                        MediaPlayerContext?.setPlayerMetadata(newplaylist[0])
+                        MediaPlayerContext?.setPlaylistPos(0)
+                        MediaPlayerContext.audioPlayerRef.current.src = newplaylist[0].src
+                        void MediaPlayerContext.audioPlayerRef.current.play()
+                    }}><PlayIcon />Play Album</Button>
                 </div>
                 <div className="flex flex-col gap-1 max-w-full min-w-0 w-full">
                     <h1 className="text-3xl text-white font-medium truncate max-w-full shrink-0">{value.album}</h1>
@@ -213,7 +229,9 @@ function AlbumTrackTable({albumTitle}: {albumTitle: string}) {
                     console.log(value)
                     const player = MediaPlayerContext?.audioPlayerRef.current
                     if (!player || !musicPath) return
-                    MediaPlayerContext.setPlayerMetadata({...value, path: key, image: musicPath + "/MediaPlayDb/pictures/" + key.replaceAll("/", "_"), type: "music"})
+                    MediaPlayerContext.setPlayerMetadata({...value, path: key, image: musicPath + "/MediaPlayDb/pictures/" + key.replaceAll("/", "_"), type: "music", src: window.app.getLocalFileUrl(musicPath, key)})
+                    MediaPlayerContext.setPlaylist([{...value, path: key, image: musicPath + "/MediaPlayDb/pictures/" + key.replaceAll("/", "_"), type: "music", src: window.app.getLocalFileUrl(musicPath, key)}])
+                    MediaPlayerContext.setPlaylistPos(0)
                     player.src = window.app.getLocalFileUrl(musicPath, key)
                     void player.play()
                 }}>

@@ -1,16 +1,17 @@
 "use client"
 import { ButtonGroup } from "./ui/button-group";
 import { Button } from "./ui/button";
-import { CableIcon, FastForwardIcon, FolderCogIcon, LibraryBigIcon, MusicIcon, PauseIcon, PlayIcon, RewindIcon, SettingsIcon, SquareArrowOutUpRightIcon } from "lucide-react";
+import { CableIcon, FastForwardIcon, FolderCogIcon, LibraryBigIcon, ListIcon, MusicIcon, PauseIcon, PlayIcon, RewindIcon, SettingsIcon, SquareArrowOutUpRightIcon, XIcon } from "lucide-react";
 import { useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { useDrives } from "@/lib/useDrives";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "./ui/dropdown-menu";
-import { Item, ItemContent, ItemDescription, ItemMedia, ItemTitle } from "./ui/item";
+import { Item, ItemContent, ItemDescription, ItemGroup, ItemMedia, ItemTitle } from "./ui/item";
 import { useMediaPlayerContext } from "./mediaPlayerContext";
 import { Slider } from "./ui/slider";
 import { Progress } from "./ui/progress";
 import { ManageLibrariesDialog } from "./manageLibrariesDialog";
+import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
 
 function formatTime(seconds: number) {
     const totalSeconds = Math.floor(seconds)
@@ -54,12 +55,54 @@ export default function AppHeader() {
                 </InputGroupAddon>
                 <InputGroupInput placeholder="Search" />
             </InputGroup> */}
-            <DropdownMenu>
-                <DropdownMenuTrigger render={<Button variant="outline" size="icon" className="mr-2 nodrag" aria-label="Manage libraries"><SettingsIcon /></Button>} />
-                <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={() => setManageLibrariesOpen(true)}><FolderCogIcon />Manage libraries</DropdownMenuItem>
-                </DropdownMenuContent>
-            </DropdownMenu>
+            <ButtonGroup>
+                <Popover>
+                    <PopoverTrigger render={<Button variant="outline" size="icon" className="nodrag" aria-label="Playlist"><ListIcon /></Button>} />
+                    <PopoverContent className="max-h-100 p-0 gap-0">
+                        <div className="flex flex-row items-center h-[45px] min-h-[45px] border-b-1">
+                            <div className="ml-3.5 text-[16px] font-medium">Queue</div>
+                            <div className="flex flex-1" />
+                            <Button className="mr-2" size={"sm"} variant={"ghost"} onClick={() => {
+                                if (!mediaPlayerContext?.audioPlayerRef.current) return
+                                mediaPlayerContext?.setPlaylistPos(0)
+                                mediaPlayerContext?.setPlaylist([])
+                                mediaPlayerContext?.setPlayerMetadata(null)
+                                mediaPlayerContext.audioPlayerRef.current.src = ""
+                                mediaPlayerContext.audioPlayerRef.current.currentTime = 0
+                                mediaPlayerContext?.audioPlayerRef.current?.pause()
+                            }}>
+                                <XIcon />Clear
+                            </Button>
+                        </div>
+                        <div className={"flex flex-col flex-1 overflow-y-scroll p-2"}>
+                            {mediaPlayerContext?.playlist.length > 0 ? <ItemGroup className="gap-0">
+                                {mediaPlayerContext?.playlist.map((item, index) => <Item className={`p-2 ${index == mediaPlayerContext.playlistPos ? "bg-foreground/10" : ""}`} onClick={() => {
+                                    if (!mediaPlayerContext.audioPlayerRef.current) return
+                                    mediaPlayerContext.audioPlayerRef.current.currentTime = 0
+                                    mediaPlayerContext.audioPlayerRef.current.src = mediaPlayerContext.playlist[index].src
+                                    mediaPlayerContext.audioPlayerRef.current.play()
+                                    mediaPlayerContext.setPlayerMetadata(mediaPlayerContext.playlist[index])
+                                    mediaPlayerContext.setPlaylistPos(index)
+                                }}>
+                                    <ItemMedia variant={"image"}>
+                                        <img src={window.app.getLocalFileUrl(item.pictureLoc, "")} />
+                                    </ItemMedia>
+                                    <ItemContent>
+                                        <ItemTitle>{item.title}</ItemTitle>
+                                        <ItemDescription>{item.artist}</ItemDescription>
+                                    </ItemContent>
+                                </Item>)}
+                            </ItemGroup> : <div className="text-center p-4 text-muted-foreground">No Media in the Queue</div>}
+                        </div>
+                    </PopoverContent>
+                </Popover>
+                <DropdownMenu>
+                    <DropdownMenuTrigger render={<Button variant="outline" size="icon" className="mr-2 nodrag" aria-label="Manage libraries"><SettingsIcon /></Button>} />
+                    <DropdownMenuContent align="end" className="w-auto">
+                        <DropdownMenuItem onClick={() => setManageLibrariesOpen(true)}><FolderCogIcon />Manage libraries</DropdownMenuItem>
+                    </DropdownMenuContent>
+                </DropdownMenu>
+            </ButtonGroup>
             <ManageLibrariesDialog open={manageLibrariesOpen} onOpenChange={setManageLibrariesOpen} />
         </header>
     )

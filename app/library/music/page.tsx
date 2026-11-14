@@ -7,7 +7,7 @@ import { regenerateLibraryDb, type MediaLibraryTags } from "@/lib/libraryDb";
 import { usePortableMediaDrive } from "@/lib/useDrives";
 import { updateDeviceLastSync } from "@/lib/updateDeviceLastSync";
 import { useReadConfigFile, useReadFileJson } from "@/lib/useReadFile";
-import { CableIcon, MoreHorizontalIcon, PlayIcon, RotateCcwIcon } from "lucide-react";
+import { CableIcon, ListIcon, MoreHorizontalIcon, PlayIcon, RotateCcwIcon } from "lucide-react";
 import { useEffect } from "react";
 
 type MusicLibraryDb = {version: string; metadataStore: Record<string, MediaLibraryTags>};
@@ -92,7 +92,9 @@ export default function LibraryPage() {
                             console.log(value)
                             const player = MediaPlayerContext?.audioPlayerRef.current
                             if (!player || !musicPath) return
-                            MediaPlayerContext.setPlayerMetadata({...value, path: key, image: musicPath + "/MediaPlayDb/pictures/" + key.replaceAll("/", "_"), type: "music"})
+                            MediaPlayerContext.setPlayerMetadata({...value, path: key, image: musicPath + "/MediaPlayDb/pictures/" + key.replaceAll("/", "_"), type: "music", src: window.app.getLocalFileUrl(musicPath, key)})
+                            MediaPlayerContext.setPlaylist([{...value, path: key, image: musicPath + "/MediaPlayDb/pictures/" + key.replaceAll("/", "_"), type: "music", src: window.app.getLocalFileUrl(musicPath, key)}])
+                            MediaPlayerContext.setPlaylistPos(0)
                             player.src = window.app.getLocalFileUrl(musicPath, key)
                             void player.play()
                         }}>
@@ -120,6 +122,15 @@ export default function LibraryPage() {
                                 <DropdownMenu>
                                     <DropdownMenuTrigger render={<Button variant={"ghost"} size={"icon-sm"}><MoreHorizontalIcon /></Button>} />
                                     <DropdownMenuContent className="w-auto">
+                                        <DropdownMenuItem onClick={() => {
+                                            console.log(value)
+                                            const player = MediaPlayerContext?.audioPlayerRef.current
+                                            if (!player || !musicPath) return
+                                            MediaPlayerContext.setPlaylist([...MediaPlayerContext.playlist, {...value, path: key, image: musicPath + "/MediaPlayDb/pictures/" + key.replaceAll("/", "_"), type: "music", src: window.app.getLocalFileUrl(musicPath, key)}])
+                                        }}>
+                                            <ListIcon />
+                                            Add to Queue
+                                        </DropdownMenuItem>
                                         <DropdownMenuItem disabled={!drive.drive?.mountpoint} onClick={async() => {
                                             const mountpoint = drive.drive?.mountpoint
                                             if (!mountpoint || !musicPath) return
