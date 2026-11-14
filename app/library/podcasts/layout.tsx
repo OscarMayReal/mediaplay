@@ -40,7 +40,7 @@ export default function LibraryPage({children}: {children: React.JSX.Element}) {
             setPodcastLibary(JSON.parse(podcastDb))
         }
     }, [config])
-    return <div className="flex flex-row h-full w-full">
+    return <div className="flex min-w-0 flex-1 flex-row h-full w-full overflow-hidden">
         <div className="flex flex-col w-[350px] h-full border-r-1 p-2 shrink-0">
             <div className="flex flex-row w-full p-2 pb-3 items-center">
                 <h2 className="text-xl font-medium pl-1">
@@ -107,11 +107,11 @@ export default function LibraryPage({children}: {children: React.JSX.Element}) {
                         <ItemMedia variant={"image"}>
                             <img src={value.meta.image.url} />
                         </ItemMedia>
-                        <ItemContent>
-                            <ItemTitle>
+                        <ItemContent className="min-w-0">
+                            <ItemTitle className="w-full min-w-0 truncate">
                                 {value.meta.title}
                             </ItemTitle>
-                            <ItemDescription>
+                            <ItemDescription className="w-full min-w-0 truncate">
                                 {value.meta.owner.name}
                             </ItemDescription>
                         </ItemContent>
@@ -122,7 +122,7 @@ export default function LibraryPage({children}: {children: React.JSX.Element}) {
                 })}
             </ItemGroup>
         </div>
-        <div className="w-full h-full">
+        <div className="min-w-0 flex-1 h-full overflow-hidden">
             {children}
         </div>
     </div>

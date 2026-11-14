@@ -1,7 +1,8 @@
 import { app, BrowserWindow, dialog, ipcMain, net, protocol, shell, utilityProcess } from "electron"
-import { createReadStream } from "node:fs"
-import { stat } from "node:fs/promises"
+import { createReadStream, createWriteStream } from "node:fs"
+import { mkdir, rm, stat } from "node:fs/promises"
 import { Readable } from "node:stream"
+import { pipeline } from "node:stream/promises"
 import { createServer } from "node:net"
 import path from "node:path"
 import { fileURLToPath, pathToFileURL } from "node:url"
@@ -35,6 +36,30 @@ ipcMain.handle("app:selectDirectory", async (event) => {
     properties: ["openDirectory", "createDirectory"],
   })
   return result.canceled ? null : result.filePaths[0] ?? null
+})
+
+ipcMain.handle("app:downloadFile", async (_event, source, target) => {
+  if (typeof source !== "string" || typeof target !== "string" || !path.isAbsolute(target)) {
+    throw new Error("Invalid download request")
+  }
+  const url = new URL(source)
+  if (url.protocol !== "http:" && url.protocol !== "https:") {
+    throw new Error("Only HTTP and HTTPS downloads are supported")
+  }
+
+  const response = await fetch(url)
+  if (!response.ok || !response.body) {
+    await response.body?.cancel()
+    throw new Error(`Download failed (${response.status})`)
+  }
+
+  await mkdir(path.dirname(target), { recursive: true })
+  try {
+    await pipeline(Readable.fromWeb(response.body), createWriteStream(target))
+  } catch (error) {
+    await rm(target, { force: true })
+    throw error
+  }
 })
 
 function availablePort() {

@@ -12,6 +12,7 @@ const app = {
   getPath: (name: LibraryPath): string => ipcRenderer.sendSync("app:getLibraryPath", name),
   getLocalFileUrl: (directory: string, file: string): string =>
     `localfile://media${pathToFileURL(path.join(directory, file)).pathname}`,
+  downloadFile: (url: string, target: string): Promise<void> => ipcRenderer.invoke("app:downloadFile", url, target),
   openWindow: (route: string): Promise<void> => ipcRenderer.invoke("app:openWindow", route),
   selectDirectory: (): Promise<string | null> => ipcRenderer.invoke("app:selectDirectory"),
 }

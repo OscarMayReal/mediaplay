@@ -85,7 +85,9 @@ export default function AppHeader() {
                                     mediaPlayerContext.setPlaylistPos(index)
                                 }}>
                                     <ItemMedia variant={"image"}>
-                                        <img src={window.app.getLocalFileUrl(item.pictureLoc, "")} />
+                                        {item.pictureLoc
+                                            ? <img src={window.app.getLocalFileUrl(item.pictureLoc, "")} alt="" />
+                                            : <MusicIcon size={20} />}
                                     </ItemMedia>
                                     <ItemContent>
                                         <ItemTitle>{item.title}</ItemTitle>
