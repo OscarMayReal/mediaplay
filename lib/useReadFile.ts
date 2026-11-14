@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { getLibraries } from "./getLibraries";
 
 export type LibraryConfig = {
@@ -16,8 +16,18 @@ export function useReadFileJson<T>({path}: {path: string | null | undefined}) {
         }
 
         window.fsPromises.readFile(path, {encoding: "utf-8"})
-            .then(contents => setData(JSON.parse(contents) as T))
-            .catch(() => setData(null))
+            .then(contents => {
+                const nextData = JSON.parse(contents) as T;
+                setData(currentData => {
+                    // Preserve the existing reference when a reload returns the
+                    // same JSON value. This keeps consumers' effects from
+                    // rerunning just because the file was read again.
+                    return JSON.stringify(currentData) === JSON.stringify(nextData)
+                        ? currentData
+                        : nextData;
+                });
+            })
+            .catch(() => setData(currentData => currentData === null ? currentData : null))
             .finally(() => setLoaded(true));
     }, [path]);
 
@@ -25,7 +35,7 @@ export function useReadFileJson<T>({path}: {path: string | null | undefined}) {
         reload();
     }, [reload]);
 
-    return {loaded, data, reload};
+    return useMemo(() => ({loaded, data, reload}), [loaded, data, reload]);
 }
 
 export function useReadConfigFile() {

@@ -27,6 +27,7 @@
     "next": "16.4.2",
     "next-themes": "^0.4.6",
     "node-drivelist": "^1.1.0",
+    "podparse": "^1.6.0",
     "react": "19.3.1",
     "react-dom": "19.3.1",
     "shadcn": "^4.22.1",

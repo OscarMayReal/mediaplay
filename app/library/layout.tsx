@@ -1,6 +1,6 @@
 "use client"
 import { Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarInset, SidebarMenuButton, SidebarProvider } from "@/components/ui/sidebar";
-import { DiscAlbumIcon, MusicIcon, VideoIcon } from "lucide-react";
+import { DiscAlbumIcon, MusicIcon, PodcastIcon, VideoIcon } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 
 export default function LibraryLayout({children}: {children: React.ReactNode}) {
@@ -23,12 +23,12 @@ export default function LibraryLayout({children}: {children: React.ReactNode}) {
                         <SidebarMenuButton className={pathName == "/library/videos" ? "bg-foreground/5 hover:bg-foreground/5!" : ""} onClick={() => router.push("/library/videos")}><VideoIcon />Videos</SidebarMenuButton>
                     </SidebarGroupContent>
                 </SidebarGroup>
-                {/* <SidebarGroup>
+                <SidebarGroup>
                     <SidebarGroupLabel>Podcasts</SidebarGroupLabel>
                     <SidebarGroupContent>
                         <SidebarMenuButton className={pathName == "/library/podcasts" ? "bg-foreground/5 hover:bg-foreground/5!" : ""} onClick={() => router.push("/library/podcasts")}><PodcastIcon />Podcasts</SidebarMenuButton>
                     </SidebarGroupContent>
-                </SidebarGroup> */}
+                </SidebarGroup>
             </SidebarContent>
         </Sidebar>
         <SidebarInset>

@@ -7,6 +7,7 @@ import AppHeader from "@/components/header";
 import { SetupDialog } from "@/components/setup";
 import { MediaPlayerProvider } from "@/components/mediaPlayerContext";
 import type { Metadata } from "next";
+import { Toaster } from "@/components/ui/toast";
 
 const figtree = Figtree({subsets:['latin'],variable:'--font-sans'})
 
@@ -33,6 +34,7 @@ export default function RootLayout({
       <body className="flex flex-col top-0 left-0 fixed w-[100dvw] h-[100dvh]">
         <MediaPlayerProvider>
           <ThemeProvider>
+            <Toaster />
             <AppHeader />
             {children}
           </ThemeProvider>
