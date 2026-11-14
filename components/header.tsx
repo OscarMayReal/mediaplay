@@ -1,11 +1,11 @@
 "use client"
 import { ButtonGroup } from "./ui/button-group";
 import { Button } from "./ui/button";
-import { CableIcon, FastForwardIcon, FolderCogIcon, LibraryBigIcon, ListIcon, MusicIcon, PauseIcon, PlayIcon, RewindIcon, SettingsIcon, SquareArrowOutUpRightIcon, XIcon } from "lucide-react";
+import { CableIcon, FastForwardIcon, FolderCogIcon, FullscreenIcon, LibraryBigIcon, ListIcon, MoreHorizontalIcon, MusicIcon, PauseIcon, PlayIcon, RewindIcon, SettingsIcon, SquareArrowOutUpRightIcon, XIcon } from "lucide-react";
 import { useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { useDrives } from "@/lib/useDrives";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "./ui/dropdown-menu";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "./ui/dropdown-menu";
 import { Item, ItemContent, ItemDescription, ItemGroup, ItemMedia, ItemTitle } from "./ui/item";
 import { useMediaPlayerContext } from "./mediaPlayerContext";
 import { Slider } from "./ui/slider";
@@ -24,7 +24,7 @@ export default function AppHeader() {
     const drives = useDrives({autoReload: true})
     const pathName = usePathname()
     const [manageLibrariesOpen, setManageLibrariesOpen] = useState(false)
-    if (pathName.startsWith("/videoPlayer")) return null
+    if (pathName.startsWith("/videoPlayer") || pathName.startsWith("/largescreen")) return null
     return (
         <header className="h-[50px] bg-muted border-b-1 w-full flex flex-row items-center titlebar shrink-0 relative">
             <ButtonGroup className="ml-22 nodrag">
@@ -99,9 +99,14 @@ export default function AppHeader() {
                     </PopoverContent>
                 </Popover>
                 <DropdownMenu>
-                    <DropdownMenuTrigger render={<Button variant="outline" size="icon" className="mr-2 nodrag" aria-label="Manage libraries"><SettingsIcon /></Button>} />
+                    <DropdownMenuTrigger render={<Button variant="outline" size="icon" className="mr-2 nodrag" aria-label="Manage libraries"><MoreHorizontalIcon /></Button>} />
                     <DropdownMenuContent align="end" className="w-auto">
                         <DropdownMenuItem onClick={() => setManageLibrariesOpen(true)}><FolderCogIcon />Manage libraries</DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => {
+                            window.app.openWindow("/largescreen")
+                        }}><FullscreenIcon />Large Screen Mode</DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem variant="destructive"><XIcon />Quit</DropdownMenuItem>
                     </DropdownMenuContent>
                 </DropdownMenu>
             </ButtonGroup>

@@ -4,6 +4,7 @@ import path from "node:path"
 import { pathToFileURL } from "node:url"
 import drivelist from "node-drivelist"
 import { ipcRenderer } from "electron"
+import os from "node:os"
 
 type LibraryPath = "music" | "videos" | "pictures" | "documents" | "downloads"
 type WindowStateEvent = "enter-full-screen" | "leave-full-screen" | "maximize" | "unmaximize" | "minimize" | "restore"
@@ -26,6 +27,8 @@ window.electronAPI = {
   },
 }
 
+window.os = os
+
 window.app = app
 
 window.fs = fs
@@ -41,6 +44,7 @@ declare global {
       onWindowStateChange: (callback: (event: WindowStateEvent) => void) => () => void
     },
     drivelist: typeof drivelist,
+    os: typeof os
     fs: typeof fs,
     app: typeof app,
     fsPromises: typeof fsPromises
