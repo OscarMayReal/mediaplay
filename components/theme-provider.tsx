@@ -15,10 +15,23 @@ function ThemeProvider({
       disableTransitionOnChange
       {...props}
     >
+      <WindowTitleBarTheme />
       <ThemeHotkey />
       {children}
     </NextThemesProvider>
   )
+}
+
+function WindowTitleBarTheme() {
+  const { resolvedTheme } = useTheme()
+
+  React.useEffect(() => {
+    if (window.electronAPI?.platform !== "win32" || !resolvedTheme) return
+
+    window.electronAPI.setWindowTheme(resolvedTheme)
+  }, [resolvedTheme])
+
+  return null
 }
 
 function isTypingTarget(target: EventTarget | null) {

@@ -32,6 +32,7 @@ export default function AppHeader() {
     const [manageLibrariesOpen, setManageLibrariesOpen] = useState(false)
     const [isFullScreen, setIsFullScreen] = useState(false)
     const [isMacOS, setIsMacOS] = useState(false)
+    const [isWindows, setIsWindows] = useState(false)
     const toggleMediaServer = async () => {
         const libraries = getLibraries()
         if (!libraries || !window.fsPromises) return
@@ -47,6 +48,7 @@ export default function AppHeader() {
     }
     useEffect(() => {
         setIsMacOS(window.electronAPI?.platform === "darwin")
+        setIsWindows(window.electronAPI?.platform === "win32")
         if (!window.electronAPI) return
         return window.electronAPI.onWindowStateChange((state) => {
             if (state === "enter-full-screen") setIsFullScreen(true)
@@ -128,7 +130,7 @@ export default function AppHeader() {
                     </PopoverContent>
                 </Popover>
                 <DropdownMenu>
-                    <DropdownMenuTrigger render={<Button variant="outline" size="icon" className="mr-2 nodrag" aria-label="Manage libraries"><MoreHorizontalIcon /></Button>} />
+                    <DropdownMenuTrigger render={<Button variant="outline" size="icon" className={`${isWindows ? "mr-24" : "mr-2"} nodrag`} aria-label="Manage libraries"><MoreHorizontalIcon /></Button>} />
                     <DropdownMenuContent align="end" className="w-auto">
                         <DropdownMenuItem onClick={() => setManageLibrariesOpen(true)}><FolderCogIcon />Manage libraries</DropdownMenuItem>
                         <DropdownMenuCheckboxItem onClick={() => void toggleMediaServer()} checked={mediaServerEnabled}><CableIcon />Media server</DropdownMenuCheckboxItem>

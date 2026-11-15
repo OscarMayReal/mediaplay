@@ -37,6 +37,15 @@ ipcMain.on("window:setFullscreen", (event, fullscreen) => {
   window.setFullScreen(fullscreen)
 })
 
+ipcMain.on("window:setTheme", (event, theme) => {
+  if (process.platform !== "win32" || (theme !== "light" && theme !== "dark")) return
+  const window = BrowserWindow.fromWebContents(event.sender)
+  if (!window) return
+  window.setTitleBarOverlay(theme === "dark"
+    ? { color: "#262626", symbolColor: "#f5f5f5", height: 49 }
+    : { color: "#f5f5f5", symbolColor: "#666666", height: 49 })
+})
+
 ipcMain.on("app:setMediaServerEnabled", (_event, enabled) => {
   if (typeof enabled !== "boolean") return
   if (enabled) startMediaServer()

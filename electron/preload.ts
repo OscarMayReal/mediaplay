@@ -22,6 +22,7 @@ window.electronAPI = {
   platform: process.platform,
   quit: () => ipcRenderer.send("app:quit"),
   setFullscreen: (fullscreen: boolean) => ipcRenderer.send("window:setFullscreen", fullscreen),
+  setWindowTheme: (theme: "light" | "dark") => ipcRenderer.send("window:setTheme", theme),
   setMediaServerEnabled: (enabled: boolean) => ipcRenderer.send("app:setMediaServerEnabled", enabled),
   onWindowStateChange: (callback: (event: WindowStateEvent) => void) => {
     const listener = (_event: Electron.IpcRendererEvent, state: WindowStateEvent) => callback(state)
@@ -46,6 +47,7 @@ declare global {
       platform: NodeJS.Platform
       quit: () => void
       setFullscreen: (fullscreen: boolean) => void
+      setWindowTheme: (theme: "light" | "dark") => void
       setMediaServerEnabled: (enabled: boolean) => void
       onWindowStateChange: (callback: (event: WindowStateEvent) => void) => () => void
     },
