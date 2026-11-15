@@ -16,7 +16,7 @@ export default function LargeScreenHome({children}: {children: React.JSX.Element
     return <FocusRoot pointerEvents>
         <FocusNode className="flex flex-col w-full h-full" onBack={() => router.back()}>
             {children}
-            <div className="text-3xl fixed right-13 top-13">{window.os.hostname()} • {time.toLocaleTimeString().split(":").splice(0, 2).join(":")} {time.toLocaleTimeString().split(" ")[1]}</div>
+            {!pathname.startsWith("/largescreen/video/player") && <div className="text-3xl fixed right-13 top-13">{window.os.hostname()} • {time.toLocaleTimeString().split(":").splice(0, 2).join(":")} {time.toLocaleTimeString().split(" ")[1]}</div>}
         </FocusNode>
         {mediaPlayerContext?.playerMetadata !== null && pathname !== "/largescreen/nowplaying" && <>
             <Item
