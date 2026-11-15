@@ -26,7 +26,12 @@ function WindowTitleBarTheme() {
   const { resolvedTheme } = useTheme()
 
   React.useEffect(() => {
-    if (window.electronAPI?.platform !== "win32" || !resolvedTheme) return
+    if (
+      window.electronAPI?.platform !== "win32" ||
+      (resolvedTheme !== "light" && resolvedTheme !== "dark")
+    ) {
+      return
+    }
 
     window.electronAPI.setWindowTheme(resolvedTheme)
   }, [resolvedTheme])
