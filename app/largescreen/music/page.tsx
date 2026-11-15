@@ -46,9 +46,30 @@ export default function LargeScreenHome() {
     const router = useRouter()
     const [page, setPage] = useState<"all" | "albums">("all")
     const [menuTrack, setMenuTrack] = useState<string | null>(null)
+    const [albumColumnCount, setAlbumColumnCount] = useState(5)
+    const albums = Array.from(
+        Object.values(library.data?.metadataStore || {}).reduce((albumsByName, value) => {
+            if (value.album && !albumsByName.has(value.album)) {
+                albumsByName.set(value.album, value)
+            }
+            return albumsByName
+        }, new Map<string, MediaLibraryTags>())
+    )
+    const albumRows = Array.from(
+        {length: Math.ceil(albums.length / albumColumnCount)},
+        (_, rowIndex) => albums.slice(rowIndex * albumColumnCount, (rowIndex + 1) * albumColumnCount)
+    )
     const holdTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
     const heldTrack = useRef<{key: string; play: () => void} | null>(null)
     const didLongPress = useRef(false)
+    useEffect(() => {
+        const updateAlbumColumnCount = () => {
+            setAlbumColumnCount(Math.max(1, Math.floor((window.innerWidth - 72) / 224)))
+        }
+        updateAlbumColumnCount()
+        window.addEventListener("resize", updateAlbumColumnCount)
+        return () => window.removeEventListener("resize", updateAlbumColumnCount)
+    }, [])
     useEffect(() => {
         const onKeyUp = (event: KeyboardEvent) => {
             if (event.key !== "Enter" || !heldTrack.current) return
@@ -193,8 +214,19 @@ export default function LargeScreenHome() {
                     </TableBody>
                 </Table>}
             </FocusNode>}
-            {page == "albums" && <FocusNode>
-                albums
+            {page == "albums" && <FocusNode isGrid className="flex-1 min-h-0 w-full overflow-y-auto p-12 flex flex-col gap-6 content-start">
+                {albumRows.map((row, rowIndex) => (
+                    <FocusNode key={`album-row-${rowIndex}`} orientation="horizontal" className="grid w-full gap-6" style={{gridTemplateColumns: `repeat(${albumColumnCount}, minmax(0, 1fr))`}}>
+                        {row.map(([album, value]) => (
+                            <FocusNode key={album} className="min-w-0 rounded-md [&.isFocused]:outline-4 [&.isFocused]:outline-primary" onSelected={() => {
+                                router.push("/largescreen/music/album/" + encodeURIComponent(album))
+                            }}>
+                                {value.pictureLoc && <img className="block w-full aspect-square rounded-md object-cover" src={window.app.getLocalFileUrl(value.pictureLoc, "")} alt={album} />}
+                                <div className="mt-2 truncate text-xl">{album}</div>
+                            </FocusNode>
+                        ))}
+                    </FocusNode>
+                ))}
             </FocusNode>}
         </FocusNode>
     </div>
