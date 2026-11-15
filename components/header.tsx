@@ -1,17 +1,18 @@
 "use client"
 import { ButtonGroup } from "./ui/button-group";
 import { Button } from "./ui/button";
-import { CableIcon, FastForwardIcon, FolderCogIcon, FullscreenIcon, LibraryBigIcon, ListIcon, MoreHorizontalIcon, MusicIcon, PauseIcon, PlayIcon, RewindIcon, SettingsIcon, SquareArrowOutUpRightIcon, XIcon } from "lucide-react";
+import { CableIcon, FastForwardIcon, FolderCogIcon, FullscreenIcon, LibraryBigIcon, ListIcon, MonitorIcon, MoonIcon, MoreHorizontalIcon, MusicIcon, PauseIcon, PlayIcon, RewindIcon, SettingsIcon, SquareArrowOutUpRightIcon, SunIcon, XIcon } from "lucide-react";
 import { useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { useDrives } from "@/lib/useDrives";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "./ui/dropdown-menu";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuSeparator, DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger, DropdownMenuTrigger } from "./ui/dropdown-menu";
 import { Item, ItemContent, ItemDescription, ItemGroup, ItemMedia, ItemTitle } from "./ui/item";
 import { useMediaPlayerContext } from "./mediaPlayerContext";
 import { Slider } from "./ui/slider";
 import { Progress } from "./ui/progress";
 import { ManageLibrariesDialog } from "./manageLibrariesDialog";
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
+import { useTheme } from "next-themes";
 
 function formatTime(seconds: number) {
     const totalSeconds = Math.floor(seconds)
@@ -19,6 +20,7 @@ function formatTime(seconds: number) {
 }
 
 export default function AppHeader() {
+    const theme = useTheme()
     const mediaPlayerContext = useMediaPlayerContext()
     const router = useRouter()
     const drives = useDrives({autoReload: true})
@@ -102,6 +104,26 @@ export default function AppHeader() {
                     <DropdownMenuTrigger render={<Button variant="outline" size="icon" className="mr-2 nodrag" aria-label="Manage libraries"><MoreHorizontalIcon /></Button>} />
                     <DropdownMenuContent align="end" className="w-auto">
                         <DropdownMenuItem onClick={() => setManageLibrariesOpen(true)}><FolderCogIcon />Manage libraries</DropdownMenuItem>
+                        <DropdownMenuSub>
+                            <DropdownMenuSubTrigger>
+                                {theme.theme == "light" && <><SunIcon />Light Theme</>}
+                                {theme.theme == "dark" && <><MoonIcon />Dark Theme</>}
+                                {theme.theme == "system" && <><MonitorIcon />System Theme</>}
+                            </DropdownMenuSubTrigger>
+                            <DropdownMenuSubContent>
+                                <DropdownMenuRadioGroup value={theme.theme} onValueChange={theme.setTheme}>
+                                    <DropdownMenuRadioItem value={"light"}>
+                                        <SunIcon />Light Theme
+                                    </DropdownMenuRadioItem>
+                                    <DropdownMenuRadioItem value={"dark"}>
+                                        <MoonIcon />Dark Theme
+                                    </DropdownMenuRadioItem>
+                                    <DropdownMenuRadioItem value={"system"}>
+                                        <MonitorIcon />System Theme
+                                    </DropdownMenuRadioItem>
+                                </DropdownMenuRadioGroup>
+                            </DropdownMenuSubContent>
+                        </DropdownMenuSub>
                         <DropdownMenuItem onClick={() => {
                             window.app.openWindow("/largescreen")
                         }}><FullscreenIcon />Large Screen Mode</DropdownMenuItem>

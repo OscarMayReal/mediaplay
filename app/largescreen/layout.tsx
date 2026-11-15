@@ -41,6 +41,6 @@ export default function LargeScreenHome({children}: {children: React.JSX.Element
             </ItemContent>
             </Item>
         </>}
-        {mediaPlayerContext?.playerMetadata !== null && <Progress className="fixed bottom-0 left-0 w-screen" value={mediaPlayerContext?.playerState.time} max={mediaPlayerContext?.playerState.duration} />}
+        {mediaPlayerContext?.playerMetadata !== null && <Progress className="fixed bottom-0 left-0 w-screen" progressTrackClassname="h-3" value={mediaPlayerContext?.playerState.time} max={mediaPlayerContext?.playerState.duration} />}
     </FocusRoot>
 }

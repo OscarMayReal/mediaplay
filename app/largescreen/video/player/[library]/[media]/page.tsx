@@ -140,7 +140,7 @@ export default function MediaPlayer({params}: {params: Promise<{library: string,
                     {playerState.paused ? <PlayIcon size={30} /> : <PauseIcon size={30} />}
                 </FocusNode>
             </FocusNode>}
-            <Progress className="absolute bottom-0 left-0 w-screen" value={playerState.time} max={playerState.durationn} />
+            <Progress className="absolute bottom-0 left-0 w-screen" progressTrackClassname="h-3" value={playerState.time} max={playerState.durationn} />
         </div>
     </div>
 }

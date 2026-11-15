@@ -29,6 +29,7 @@ export default function RootLayout({
     <html
       lang="en"
       suppressHydrationWarning
+      id="root"
       className={cn("antialiased", fontMono.variable, "font-sans", figtree.variable)}
     >
       <body className="flex flex-col top-0 left-0 fixed w-[100dvw] h-[100dvh]">

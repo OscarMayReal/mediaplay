@@ -5,6 +5,7 @@ import { cn } from "cn"
 
 function Progress({
   className,
+  progressTrackClassname,
   children,
   value,
   ...props
@@ -17,7 +18,7 @@ function Progress({
       {...props}
     >
       {children}
-      <ProgressTrack>
+      <ProgressTrack className={progressTrackClassname}>
         <ProgressIndicator />
       </ProgressTrack>
     </ProgressPrimitive.Root>
@@ -28,7 +29,7 @@ function ProgressTrack({ className, ...props }: ProgressPrimitive.Track.Props) {
   return (
     <ProgressPrimitive.Track
       className={cn(
-        "relative flex h-3 w-full items-center overflow-x-hidden rounded-none bg-muted",
+        "relative flex h-1 w-full items-center overflow-x-hidden rounded-none bg-muted",
         className
       )}
       data-slot="progress-track"
