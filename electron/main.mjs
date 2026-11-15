@@ -179,9 +179,11 @@ async function createWindow(route = "/") {
     minWidth: 640,
     minHeight: 480,
     show: false,
-    // Center the native controls in the 50px custom header.
+    // Keep the native macOS controls aligned with the custom header.
     trafficLightPosition: { x: 17, y: 18 },
-    titleBarOverlay: true,
+    titleBarOverlay: process.platform === "darwin"
+      ? true
+      : { color: "#f5f5f5", symbolColor: "#666666", height: 49 },
     titleBarStyle: "hidden",
     webPreferences: {
       preload: path.join(app.getAppPath(), "electron/preload.cjs"),

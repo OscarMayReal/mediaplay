@@ -31,6 +31,7 @@ export default function AppHeader() {
     const pathName = usePathname()
     const [manageLibrariesOpen, setManageLibrariesOpen] = useState(false)
     const [isFullScreen, setIsFullScreen] = useState(false)
+    const [isMacOS, setIsMacOS] = useState(false)
     const toggleMediaServer = async () => {
         const libraries = getLibraries()
         if (!libraries || !window.fsPromises) return
@@ -45,6 +46,7 @@ export default function AppHeader() {
         libraryConfig.reload()
     }
     useEffect(() => {
+        setIsMacOS(window.electronAPI?.platform === "darwin")
         if (!window.electronAPI) return
         return window.electronAPI.onWindowStateChange((state) => {
             if (state === "enter-full-screen") setIsFullScreen(true)
@@ -53,8 +55,8 @@ export default function AppHeader() {
     }, [])
     if (pathName.startsWith("/videoPlayer") || pathName.startsWith("/largescreen")) return null
     return (
-        <header className="h-[50px] bg-muted border-b-1 w-full flex flex-row items-center titlebar shrink-0 relative">
-            <ButtonGroup className={`${isFullScreen ? "ml-2" : "ml-22"} nodrag`}>
+        <header className={`h-[50px] bg-muted border-b-1 w-full flex flex-row items-center titlebar shrink-0 relative ${!isMacOS ? "pr-12" : ""}`}>
+            <ButtonGroup className={`${isFullScreen || !isMacOS ? "ml-2" : "ml-22"} nodrag`}>
                 <Button variant="outline" size="icon" aria-label="Rewind 10 seconds" onClick={() => {
                     if (!mediaPlayerContext) return
                     mediaPlayerContext.seek(mediaPlayerContext.playerState.time - 10)
