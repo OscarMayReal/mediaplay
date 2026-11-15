@@ -3,13 +3,15 @@
 import { Progress as ProgressPrimitive } from "@base-ui/react/progress"
 import { cn } from "cn"
 
+type ProgressProps = ProgressPrimitive.Root.Props & { progressTrackClassname?: string }
+
 function Progress({
   className,
   progressTrackClassname,
   children,
   value,
   ...props
-}: ProgressPrimitive.Root.Props) {
+}: ProgressProps) {
   return (
     <ProgressPrimitive.Root
       value={value}

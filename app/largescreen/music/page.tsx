@@ -6,11 +6,12 @@ import { updateDeviceLastSync } from "@/lib/updateDeviceLastSync"
 import { usePortableMediaDrive } from "@/lib/useDrives"
 import { useReadConfigFile, useReadFileJson } from "@/lib/useReadFile"
 import { Button } from "@base-ui/react"
-import { FocusNode } from "@please/lrud"
+import { FocusNode } from "@/components/focus"
 import { AlbumIcon, ArrowLeftCircleIcon, CableIcon, DiscAlbumIcon, ListIcon, MoreHorizontalIcon, MusicIcon, PodcastIcon, SettingsIcon, VideoIcon } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { Fragment, useEffect, useRef, useState } from "react"
 import { createPortal } from "react-dom"
+
 
 type MusicLibraryDb = {version: string; metadataStore: Record<string, MediaLibraryTags>};
 
@@ -136,13 +137,13 @@ export default function LargeScreenHome() {
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {Object.entries(library.data.metadataStore).map(([key, value]) => {
+                        {Object.entries(library.data!.metadataStore).map(([key, value]) => {
                             const playTrack = () => {
                                 console.log(value)
                                 const player = MediaPlayerContext?.audioPlayerRef.current
                                 if (!player || !musicPath) return
-                                MediaPlayerContext.setPlayerMetadata({...value, path: key, image: musicPath + "/MediaPlayDb/pictures/" + key.replaceAll("/", "_"), type: "music", src: window.app.getLocalFileUrl(musicPath, key)})
-                                MediaPlayerContext.setPlaylist([{...value, path: key, image: musicPath + "/MediaPlayDb/pictures/" + key.replaceAll("/", "_"), type: "music", src: window.app.getLocalFileUrl(musicPath, key)}])
+                                MediaPlayerContext.setPlayerMetadata({...value, path: key, image: musicPath + "/MediaPlayDb/pictures/" + key.replaceAll("/", "_"), type: "music" as const, src: window.app.getLocalFileUrl(musicPath, key)})
+                                MediaPlayerContext.setPlaylist([{...value, path: key, image: musicPath + "/MediaPlayDb/pictures/" + key.replaceAll("/", "_"), type: "music" as const, src: window.app.getLocalFileUrl(musicPath, key)}])
                                 MediaPlayerContext.setPlaylistPos(0)
                                 player.src = window.app.getLocalFileUrl(musicPath, key)
                                 void player.play()
@@ -169,7 +170,7 @@ export default function LargeScreenHome() {
                                     addToQueue()
                                     setMenuTrack(null)
                                 } else if (!heldTrack.current) playTrack()
-                            }} onClick={() => { if (!didLongPress.current) playTrack(); didLongPress.current = false }} onPointerDown={startHold} onPointerUp={cancelHold} onPointerLeave={cancelHold} onContextMenu={(event) => { event.preventDefault(); setMenuTrack(key) }} onKey={event => {
+                            }} onClick={() => { if (!didLongPress.current) playTrack(); didLongPress.current = false }} onPointerDown={startHold} onPointerUp={cancelHold} onPointerLeave={cancelHold} onContextMenu={(event: React.MouseEvent) => { event.preventDefault(); setMenuTrack(key) }} onKey={(event: any) => {
                                 if (menuTrack === key) {
                                     event.preventDefault()
                                     event.stopPropagation()
@@ -181,7 +182,7 @@ export default function LargeScreenHome() {
                                 if (heldTrack.current) return
                                 heldTrack.current = {key, play: playTrack}
                                 startHold()
-                            }} onFocused={({currentNode}) => currentNode.elRef.current?.scrollIntoView({block: "nearest"})}>
+                            }} onFocused={({currentNode}: any) => currentNode.elRef.current?.scrollIntoView({block: "nearest"})}>
                                 <TableHead className="w-12">
                                 </TableHead>
                                 <TableCell>

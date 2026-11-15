@@ -7,8 +7,9 @@ import { regenerateLibraryDb, type MediaLibraryTags } from "@/lib/libraryDb";
 import { usePortableMediaDrive } from "@/lib/useDrives";
 import { updateDeviceLastSync } from "@/lib/updateDeviceLastSync";
 import { useReadConfigFile, useReadFileJson } from "@/lib/useReadFile";
-import { CableIcon, ListIcon, MoreHorizontalIcon, PlayIcon, RotateCcwIcon } from "lucide-react";
-import { useEffect } from "react";
+import { CableIcon, ListIcon, MoreHorizontalIcon, PlayIcon, RotateCcwIcon, SearchIcon } from "lucide-react";
+import { useEffect, useState } from "react";
+import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
 
 type MusicLibraryDb = {version: string; metadataStore: Record<string, MediaLibraryTags>};
 
@@ -29,6 +30,7 @@ const audioExtensions = [
 ];
 
 export default function LibraryPage() {
+    const [searchTerm, setSearchTerm] = useState("")
     const drive = usePortableMediaDrive({autoReload: true})
     const config = useReadConfigFile()
     const musicPath = config.data?.libraries.find(item => item.type === "music")?.path
@@ -53,11 +55,17 @@ export default function LibraryPage() {
                     }}><RotateCcwIcon />Rescan Library</DropdownMenuItem>
                 </DropdownMenuContent>
             </DropdownMenu>
+            <InputGroup className="w-[250px] mr-2 bg-white nodrag">
+                <InputGroupAddon>
+                    <SearchIcon />
+                </InputGroupAddon>
+                <InputGroupInput placeholder="Search" value={searchTerm} onChange={ev => setSearchTerm(ev.target.value)} />
+            </InputGroup>
             <Button onClick={() => {
                 if (!musicPath || !MediaPlayerContext || !MediaPlayerContext.audioPlayerRef.current) return
                 const newplaylist = []
-                for (const [itemkey, itemvalue] of Object.entries(library.data.metadataStore)) {
-                    newplaylist.push({...itemvalue, path: itemkey, image: musicPath + "/MediaPlayDb/pictures/" + itemkey.replaceAll("/", "_"), type: "music", src: window.app.getLocalFileUrl(musicPath, itemkey)})
+                for (const [itemkey, itemvalue] of Object.entries(library.data!.metadataStore)) {
+                    newplaylist.push({...itemvalue, path: itemkey, image: musicPath + "/MediaPlayDb/pictures/" + itemkey.replaceAll("/", "_"), type: "music" as const, src: window.app.getLocalFileUrl(musicPath, itemkey)})
                 }
                 MediaPlayerContext?.setPlaylist(newplaylist)
                 MediaPlayerContext?.setPlayerMetadata(newplaylist[0])
@@ -98,13 +106,19 @@ export default function LibraryPage() {
                     </TableRow>
                 </TableHeader>
                 <TableBody>
-                    {Object.entries(library.data.metadataStore).map(([key, value]) => {
+                    {Object.entries(library.data!.metadataStore).filter(item => {
+                        if (searchTerm == "") {
+                            return true
+                        } else {
+                            return item[1].title?.toLowerCase().includes(searchTerm.toLowerCase())
+                        }
+                    }).map(([key, value]) => {
                         return <TableRow className={(MediaPlayerContext?.playerMetadata?.path == key ? "bg-foreground/5 hover:bg-foreground/5" : "even:bg-foreground/2") + " border-transparent hover:bg-foreground/5"} key={key} onClick={() => {
                             console.log(value)
                             const player = MediaPlayerContext?.audioPlayerRef.current
                             if (!player || !musicPath) return
-                            MediaPlayerContext.setPlayerMetadata({...value, path: key, image: musicPath + "/MediaPlayDb/pictures/" + key.replaceAll("/", "_"), type: "music", src: window.app.getLocalFileUrl(musicPath, key)})
-                            MediaPlayerContext.setPlaylist([{...value, path: key, image: musicPath + "/MediaPlayDb/pictures/" + key.replaceAll("/", "_"), type: "music", src: window.app.getLocalFileUrl(musicPath, key)}])
+                            MediaPlayerContext.setPlayerMetadata({...value, path: key, image: musicPath + "/MediaPlayDb/pictures/" + key.replaceAll("/", "_"), type: "music" as const, src: window.app.getLocalFileUrl(musicPath, key)})
+                            MediaPlayerContext.setPlaylist([{...value, path: key, image: musicPath + "/MediaPlayDb/pictures/" + key.replaceAll("/", "_"), type: "music" as const, src: window.app.getLocalFileUrl(musicPath, key)}])
                             MediaPlayerContext.setPlaylistPos(0)
                             player.src = window.app.getLocalFileUrl(musicPath, key)
                             void player.play()
@@ -137,7 +151,7 @@ export default function LibraryPage() {
                                             console.log(value)
                                             const player = MediaPlayerContext?.audioPlayerRef.current
                                             if (!player || !musicPath) return
-                                            MediaPlayerContext.setPlaylist([...MediaPlayerContext.playlist, {...value, path: key, image: musicPath + "/MediaPlayDb/pictures/" + key.replaceAll("/", "_"), type: "music", src: window.app.getLocalFileUrl(musicPath, key)}])
+                                            MediaPlayerContext.setPlaylist([...MediaPlayerContext.playlist, {...value, path: key, image: musicPath + "/MediaPlayDb/pictures/" + key.replaceAll("/", "_"), type: "music" as const, src: window.app.getLocalFileUrl(musicPath, key)}])
                                         }}>
                                             <ListIcon />
                                             Add to Queue

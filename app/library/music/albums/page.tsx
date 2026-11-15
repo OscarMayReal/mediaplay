@@ -52,7 +52,7 @@ export default function LibraryPage() {
                     }}><RotateCcwIcon />Rescan Library</DropdownMenuItem>
                 </DropdownMenuContent>
             </DropdownMenu>
-            <Button><PlayIcon />Play All</Button>
+            {/* <Button><PlayIcon />Play All</Button> */}
         </div>
         <div className="flex flex-col p-0 pt-0 overflow-scroll max-h-full relative flex-wrap max-w-full">
             <div className="grid gap-6 grid-cols-[repeat(auto-fill,minmax(200px,1fr))] justify-start px-6 items-start content-start h-auto relative">
@@ -89,7 +89,7 @@ export default function LibraryPage() {
                     </TableRow>
                 </TableHeader>
                 <TableBody>
-                    {Object.entries(library.data.metadataStore).map(([key, value]) => {
+                    {Object.entries(library.data!.metadataStore).map(([key, value]) => {
                         return <TableRow className={MediaPlayerContext?.playerMetadata?.path == key ? "bg-foreground/5 hover:bg-foreground/5" : ""} key={key} onClick={() => {
                             console.log(value)
                             const player = MediaPlayerContext?.audioPlayerRef.current
@@ -144,7 +144,13 @@ function AlbumItem({value, setActiveAlbum, activeAlbum}: {value: MediaLibraryTag
             })
     }, [])
     return <div className="flex flex-col h-fit" onClick={() => {
-        if (value.album) setActiveAlbum(value.album)
+        if (value.album) {
+            if (activeAlbum == value.album) {
+                setActiveAlbum("")
+            } else {
+                setActiveAlbum(value.album)
+            }
+        }
     }}>
         <div className="flex flex-col relative">
             <img className="min-w-[200px] max-w-[300px] shrink block rounded-md" src={value.pictureLoc ? window.app.getLocalFileUrl(value.pictureLoc, "") : ""} ref={albumImageElement} />
@@ -161,8 +167,8 @@ function AlbumItem({value, setActiveAlbum, activeAlbum}: {value: MediaLibraryTag
                     <Button variant={"ghost"} className="text-white justify-start hover:bg-black/20 hover:text-white" onClick={() => {
                         if (!musicPath || !MediaPlayerContext || !MediaPlayerContext.audioPlayerRef.current) return
                         const newplaylist = []
-                        for (const [itemkey, itemvalue] of Object.entries(library.data.metadataStore).filter(item => item[1].album == value.album)) {
-                            newplaylist.push({...itemvalue, path: itemkey, image: musicPath + "/MediaPlayDb/pictures/" + itemkey.replaceAll("/", "_"), type: "music", src: window.app.getLocalFileUrl(musicPath, itemkey)})
+                        for (const [itemkey, itemvalue] of Object.entries(library.data!.metadataStore).filter(item => item[1].album == value.album)) {
+                            newplaylist.push({...itemvalue, path: itemkey, image: musicPath + "/MediaPlayDb/pictures/" + itemkey.replaceAll("/", "_"), type: "music" as const, src: window.app.getLocalFileUrl(musicPath, itemkey)})
                         }
                         MediaPlayerContext?.setPlaylist(newplaylist)
                         MediaPlayerContext?.setPlayerMetadata(newplaylist[0])
@@ -224,13 +230,13 @@ function AlbumTrackTable({albumTitle}: {albumTitle: string}) {
             </TableRow>
         </TableHeader> */}
         <TableBody>
-            {Object.entries(library.data.metadataStore).filter(item => item[1].album == albumTitle).map(([key, value]) => {
+            {Object.entries(library.data!.metadataStore).filter(item => item[1].album == albumTitle).map(([key, value]) => {
                 return <TableRow className={(MediaPlayerContext?.playerMetadata?.path == key ? "bg-white/5 hover:bg-white/5" : "even:bg-white/2") + " border-transparent hover:bg-white/5"} key={key} onClick={() => {
                     console.log(value)
                     const player = MediaPlayerContext?.audioPlayerRef.current
                     if (!player || !musicPath) return
-                    MediaPlayerContext.setPlayerMetadata({...value, path: key, image: musicPath + "/MediaPlayDb/pictures/" + key.replaceAll("/", "_"), type: "music", src: window.app.getLocalFileUrl(musicPath, key)})
-                    MediaPlayerContext.setPlaylist([{...value, path: key, image: musicPath + "/MediaPlayDb/pictures/" + key.replaceAll("/", "_"), type: "music", src: window.app.getLocalFileUrl(musicPath, key)}])
+                    MediaPlayerContext.setPlayerMetadata({...value, path: key, image: musicPath + "/MediaPlayDb/pictures/" + key.replaceAll("/", "_"), type: "music" as const, src: window.app.getLocalFileUrl(musicPath, key)})
+                    MediaPlayerContext.setPlaylist([{...value, path: key, image: musicPath + "/MediaPlayDb/pictures/" + key.replaceAll("/", "_"), type: "music" as const, src: window.app.getLocalFileUrl(musicPath, key)}])
                     MediaPlayerContext.setPlaylistPos(0)
                     player.src = window.app.getLocalFileUrl(musicPath, key)
                     void player.play()

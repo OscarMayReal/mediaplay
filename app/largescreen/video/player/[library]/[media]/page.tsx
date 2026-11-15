@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { ButtonGroup } from "@/components/ui/button-group";
 import { Progress } from "@/components/ui/progress";
 import { Slider } from "@/components/ui/slider";
-import { FocusNode } from "@please/lrud";
+import { FocusNode } from "@/components/focus";
 import { ArrowLeftCircleIcon, FastForwardIcon, PauseIcon, PlayIcon, RewindIcon } from "lucide-react";
 import { IAudioMetadata, parseBlob } from "music-metadata";
 import { useRouter } from "next/navigation";
@@ -140,7 +140,7 @@ export default function MediaPlayer({params}: {params: Promise<{library: string,
                     {playerState.paused ? <PlayIcon size={30} /> : <PauseIcon size={30} />}
                 </FocusNode>
             </FocusNode>}
-            <Progress className="absolute bottom-0 left-0 w-screen" progressTrackClassname="h-3" value={playerState.time} max={playerState.durationn} />
+            <Progress className="absolute bottom-0 left-0 w-screen" progressTrackClassname="h-3" value={playerState.time} max={playerState.duration} />
         </div>
     </div>
 }

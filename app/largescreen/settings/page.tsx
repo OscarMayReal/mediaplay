@@ -1,16 +1,36 @@
 "use client"
 import { useMediaPlayerContext } from "@/components/mediaPlayerContext"
-import { FocusNode } from "@please/lrud"
+import { FocusNode } from "@/components/focus"
 import { ArrowLeftCircleIcon, FullscreenIcon, ListIcon, MoonIcon, MusicIcon, PauseIcon, PlayIcon, PodcastIcon, SettingsIcon, ShrinkIcon, SkipForwardIcon, SunIcon, VideoIcon, XCircleIcon } from "lucide-react"
 import { useTheme } from "next-themes"
 import { useRouter } from "next/navigation"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 
 export default function LargeScreenHome() {
     const router = useRouter()
     const mediaPlayerContext = useMediaPlayerContext()
     const theme = useTheme()
     const [selectedItem, setSelectedItem] = useState("theme")
+    const [isFullscreen, setIsFullscreen] = useState(false)
+    useEffect(() => {
+        const fullscreenPreference = localStorage.getItem("largeScreenFullscreen")
+        const savedFullscreen = fullscreenPreference === null || fullscreenPreference === "true"
+        setIsFullscreen(savedFullscreen)
+        if (!window.electronAPI) setIsFullscreen(Boolean(document.fullscreenElement))
+        const updateFullscreen = (fullscreen: boolean) => {
+            setIsFullscreen(fullscreen)
+            localStorage.setItem("largeScreenFullscreen", String(fullscreen))
+        }
+        if (window.electronAPI) {
+            return window.electronAPI.onWindowStateChange((state) => {
+                if (state === "enter-full-screen") updateFullscreen(true)
+                if (state === "leave-full-screen") updateFullscreen(false)
+            })
+        }
+        const updateBrowserFullscreen = () => updateFullscreen(Boolean(document.fullscreenElement))
+        document.addEventListener("fullscreenchange", updateBrowserFullscreen)
+        return () => document.removeEventListener("fullscreenchange", updateBrowserFullscreen)
+    }, [])
     return <FocusNode orientation="vertical" className="flex flex-col gap-6 h-full w-full">
         <FocusNode orientation="horizontal" className="flex flex-row items-center gap-12 p-12 pb-0">
             <FocusNode className="text-4xl text-muted-foreground [&.isFocused]:text-foreground [&.isFocused]:font-semibold flex flex-row items-center gap-3 animate-all" onSelected={() => {
@@ -34,15 +54,17 @@ export default function LargeScreenHome() {
                     {theme.theme == "light" ? <SunIcon size={30} /> : <MoonIcon size={30} />}{theme.theme == "light" ? "Theme: Light" : "Theme: Dark"}
                 </FocusNode>
                 <FocusNode className="text-4xl text-muted-foreground [&.isFocused]:text-foreground [&.isFocused]:font-semibold flex flex-row items-center gap-3 animate-all" onSelected={() => {
-                    if (document.fullscreenElement) {
+                    if (window.electronAPI) {
+                        window.electronAPI.setFullscreen(!isFullscreen)
+                    } else if (document.fullscreenElement) {
                         document.exitFullscreen()
                     } else {
-                        document.getElementById("root").requestFullscreen()
+                        document.getElementById("root")?.requestFullscreen()
                     }
                 }} onFocused={() => {
                     setSelectedItem("fullscreen")
                 }}>
-                    {document.fullscreenElement ? <ShrinkIcon size={30} /> : <FullscreenIcon size={30} />}{document.fullscreenElement ? "Exit Fullscreen" : "Enter Fullscreen"}
+                    {isFullscreen ? <ShrinkIcon size={30} /> : <FullscreenIcon size={30} />}{isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen"}
                 </FocusNode>
                 <FocusNode className="text-4xl text-muted-foreground [&.isFocused]:text-foreground [&.isFocused]:font-semibold flex flex-row items-center gap-3 animate-all" onSelected={() => {
                     window.close()

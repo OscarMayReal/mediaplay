@@ -6,7 +6,7 @@ import { updateDeviceLastSync } from "@/lib/updateDeviceLastSync"
 import { usePortableMediaDrive } from "@/lib/useDrives"
 import { useReadConfigFile, useReadFileJson } from "@/lib/useReadFile"
 import { Button } from "@base-ui/react"
-import { FocusNode } from "@please/lrud"
+import { FocusNode } from "@/components/focus"
 import { AlbumIcon, ArrowLeftCircleIcon, CableIcon, DiscAlbumIcon, ListIcon, MoreHorizontalIcon, MusicIcon, PodcastIcon, SettingsIcon, VideoIcon } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { Fragment, useEffect, useRef, useState } from "react"
@@ -79,8 +79,8 @@ export default function LargeScreenHome() {
                         {Object.entries(library.data.metadataStore).map(([key, value]) => {
                             return <Fragment key={key}>
                             <FocusNode elementType="tr" orientation="horizontal" className={(MediaPlayerContext?.playerMetadata?.path == key ? "bg-foreground/5 hover:bg-foreground/5" : "even:bg-foreground/2") + " scroll-mt-[42px] border-transparent hover:bg-foreground/5 text-xl [&.isFocused]:bg-foreground/10"} onSelected={() => {
-                                router.push(`/largescreen/video/player/${videoPath.replaceAll("/", "::slash::")}/${key.replaceAll("/", "::slash::")}`)
-                            }} onFocused={({currentNode}) => currentNode.elRef.current?.scrollIntoView({block: "nearest"})}>
+                                router.push(`/largescreen/video/player/${videoPath!.replaceAll("/", "::slash::")}/${key.replaceAll("/", "::slash::")}`)
+                            }} onFocused={({currentNode}: any) => currentNode.elRef.current?.scrollIntoView({block: "nearest"})}>
                                 <TableHead className="w-12">
                                 </TableHead>
                                 <TableCell className="truncate max-w-0">

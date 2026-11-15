@@ -6,6 +6,7 @@ import path from "node:path"
 const require = createRequire(import.meta.url)
 const electron = require("electron")
 const production = process.argv.includes("--production")
+const largeScreen = process.argv.includes("--large-screen")
 
 function availablePort() {
   return new Promise((resolve, reject) => {
@@ -40,7 +41,9 @@ if (!production) {
   }
 }
 
-const desktop = spawn(electron, [path.resolve(".")], { stdio: "inherit", env })
+const desktopArgs = [path.resolve(".")]
+if (largeScreen) desktopArgs.push("--large-screen")
+const desktop = spawn(electron, desktopArgs, { stdio: "inherit", env })
 desktop.on("exit", (code) => {
   next?.kill()
   process.exitCode = code ?? 1

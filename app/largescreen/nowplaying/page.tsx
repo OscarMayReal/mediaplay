@@ -1,6 +1,6 @@
 "use client"
 import { useMediaPlayerContext } from "@/components/mediaPlayerContext"
-import { FocusNode } from "@please/lrud"
+import { FocusNode } from "@/components/focus"
 import { ArrowLeftCircleIcon, ListIcon, MusicIcon, PauseIcon, PlayIcon, PodcastIcon, SettingsIcon, SkipForwardIcon, VideoIcon } from "lucide-react"
 import { useRouter } from "next/navigation"
 
@@ -48,7 +48,7 @@ export default function LargeScreenHome() {
             </FocusNode>
             {mediaPlayerContext?.playerMetadata && <div className="flex-1 flex flex-col items-center justify-center gap-2">
                 <div className="flex flex-col gap-2">
-                    <img className="w-75 h-75 rounded-xl" src={window.app.getLocalFileUrl(mediaPlayerContext?.playerMetadata.pictureLoc, "")} />
+                    <img className="w-75 h-75 rounded-xl" src={window.app.getLocalFileUrl(mediaPlayerContext?.playerMetadata.pictureLoc ?? "", "")} />
                     <div className="text-4xl pt-2 font-semibold">{mediaPlayerContext?.playerMetadata.title}</div>
                     <div className="text-2xl">{mediaPlayerContext?.playerMetadata.artist}</div>
                 </div>

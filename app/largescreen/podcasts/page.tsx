@@ -6,7 +6,7 @@ import { updateDeviceLastSync } from "@/lib/updateDeviceLastSync"
 import { usePortableMediaDrive } from "@/lib/useDrives"
 import { useReadConfigFile, useReadFileJson } from "@/lib/useReadFile"
 import { Button } from "@base-ui/react"
-import { FocusNode } from "@please/lrud"
+import { FocusNode } from "@/components/focus"
 import { AlbumIcon, ArrowLeftCircleIcon, CableIcon, DiscAlbumIcon, ListIcon, MoreHorizontalIcon, MusicIcon, PodcastIcon, SettingsIcon, VideoIcon } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { Podcast } from "podparse"
@@ -63,7 +63,7 @@ export default function LargeScreenHome() {
                             return <Fragment key={key}>
                             <FocusNode elementType="tr" orientation="horizontal" className={(MediaPlayerContext?.playerMetadata?.path == key ? "bg-foreground/5 hover:bg-foreground/5" : "even:bg-foreground/2") + " scroll-mt-[42px] border-transparent hover:bg-foreground/5 text-xl [&.isFocused]:bg-foreground/10"} onSelected={() => {
                                 router.push(`/largescreen/podcasts/${encodeURIComponent(key)}`)
-                            }} onFocused={({currentNode}) => currentNode.elRef.current?.scrollIntoView({block: "nearest"})}>
+                            }} onFocused={({currentNode}: any) => currentNode.elRef.current?.scrollIntoView({block: "nearest"})}>
                                 <TableHead className="w-12">
                                 </TableHead>
                                 <TableCell className="truncate max-w-0">

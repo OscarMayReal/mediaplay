@@ -102,7 +102,7 @@ export default function AppHeader() {
                             </Button>
                         </div>
                         <div className={"flex flex-col flex-1 overflow-y-scroll p-2"}>
-                            {mediaPlayerContext?.playlist.length > 0 ? <ItemGroup className="gap-0">
+                            {(mediaPlayerContext?.playlist?.length ?? 0) > 0 ? <ItemGroup className="gap-0">
                                 {mediaPlayerContext?.playlist.map((item, index) => <Item className={`p-2 ${index == mediaPlayerContext.playlistPos ? "bg-foreground/10" : ""}`} onClick={() => {
                                     if (!mediaPlayerContext.audioPlayerRef.current) return
                                     mediaPlayerContext.audioPlayerRef.current.currentTime = 0

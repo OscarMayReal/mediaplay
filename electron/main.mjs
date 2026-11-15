@@ -1,4 +1,4 @@
-import { app, BrowserWindow, dialog, ipcMain, net, protocol, shell, utilityProcess } from "electron"
+import { app, BrowserWindow, dialog, ipcMain, net, protocol, session, shell, utilityProcess } from "electron"
 import { createReadStream, createWriteStream } from "node:fs"
 import { mkdir, readFile, rm, stat } from "node:fs/promises"
 import { Readable } from "node:stream"
@@ -18,6 +18,7 @@ let serverUrl
 let appOrigin
 
 const libraryPaths = new Set(["music", "videos", "pictures", "documents", "downloads"])
+const startInLargeScreenMode = process.argv.includes("--large-screen")
 
 ipcMain.on("app:getLibraryPath", (event, name) => {
   event.returnValue = libraryPaths.has(name) ? app.getPath(name) : null
@@ -25,6 +26,15 @@ ipcMain.on("app:getLibraryPath", (event, name) => {
 
 ipcMain.on("app:quit", () => {
   app.quit()
+})
+
+ipcMain.on("window:setFullscreen", (event, fullscreen) => {
+  if (typeof fullscreen !== "boolean") return
+  const window = BrowserWindow.fromWebContents(event.sender)
+  if (!window) return
+  const currentUrl = new URL(event.sender.getURL())
+  if (currentUrl.origin !== appOrigin || !(currentUrl.pathname === "/largescreen" || currentUrl.pathname.startsWith("/largescreen/"))) return
+  window.setFullScreen(fullscreen)
 })
 
 ipcMain.on("app:setMediaServerEnabled", (_event, enabled) => {
@@ -203,6 +213,19 @@ async function createWindow(route = "/") {
 }
 
 app.whenReady().then(async () => {
+  session.defaultSession.setPermissionRequestHandler((webContents, permission, callback) => {
+    if (permission !== "automatic-fullscreen" || !appOrigin) {
+      callback(false)
+      return
+    }
+
+    try {
+      const requestUrl = new URL(webContents.getURL())
+      callback(requestUrl.origin === appOrigin && (requestUrl.pathname === "/largescreen" || requestUrl.pathname.startsWith("/largescreen/")))
+    } catch {
+      callback(false)
+    }
+  })
   if (await isMediaServerEnabled()) startMediaServer()
   protocol.handle("localfile", async (request) => {
     try {
@@ -248,7 +271,7 @@ app.whenReady().then(async () => {
       return new Response("Invalid local file URL", { status: 400 })
     }
   })
-  return createWindow()
+  return createWindow(startInLargeScreenMode ? "/largescreen" : "/")
 }).catch((error) => {
   console.error(error)
   app.quit()

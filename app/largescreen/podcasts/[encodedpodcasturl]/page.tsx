@@ -3,7 +3,7 @@ import { useMediaPlayerContext } from "@/components/mediaPlayerContext"
 import { TableHeader, TableRow, TableHead, TableBody, TableCell, Table } from "@/components/ui/table"
 import { MediaLibraryTags } from "@/lib/libraryDb"
 import { useReadConfigFile, useReadFileJson } from "@/lib/useReadFile"
-import { FocusNode } from "@please/lrud"
+import { FocusNode } from "@/components/focus"
 import { ArrowLeftCircleIcon } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { Podcast } from "podparse"
@@ -24,7 +24,7 @@ function episodeExtension(item: Podcast["episodes"][number]) {
     return ({"audio/mpeg": ".mp3", "audio/mp4": ".m4a", "audio/aac": ".aac", "audio/ogg": ".ogg", "audio/opus": ".opus", "audio/wav": ".wav", "audio/flac": ".flac", "audio/x-m4a": ".m4a"} as Record<string, string>)[type] || ".mp3"
 }
 
-export default function LargeScreenHome({params}: {params: Usable<{encodedpodcasturl: string}>}) {
+export default function LargeScreenHome({params}: {params: Promise<{encodedpodcasturl: string}>}) {
     const {encodedpodcasturl} = use(params)
     const [downloading, setDownloading] = useState<Record<string, boolean>>({})
     const [downloaded, setDownloaded] = useState<Record<string, string>>({})
@@ -127,7 +127,7 @@ export default function LargeScreenHome({params}: {params: Usable<{encodedpodcas
                                 <FocusNode elementType="tr" orientation="horizontal" className={(MediaPlayerContext?.playerMetadata?.path === file ? "bg-foreground/5 hover:bg-foreground/5" : "even:bg-foreground/2") + " scroll-mt-[42px] border-transparent hover:bg-foreground/5 text-xl [&.isFocused]:bg-foreground/10"} onSelected={() => {
                                     if (file) playEpisode(item)
                                     else if (!isDownloading) void downloadEpisode(item)
-                                }} onFocused={({currentNode}) => currentNode.elRef.current?.scrollIntoView({block: "nearest"})}>
+                                }} onFocused={({currentNode}: any) => currentNode.elRef.current?.scrollIntoView({block: "nearest"})}>
                                     <TableHead className="w-12" />
                                     <TableCell className="truncate max-w-0">{item.title || "-"}</TableCell>
                                     <TableCell className="truncate max-w-0">{item.description || "-"}</TableCell>

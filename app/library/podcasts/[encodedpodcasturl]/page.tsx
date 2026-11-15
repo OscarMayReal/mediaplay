@@ -2,13 +2,14 @@
 import { ExpandableText } from "@/components/expandabletext";
 import { useMediaPlayerContext } from "@/components/mediaPlayerContext";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Empty, EmptyContent, EmptyDescription, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
 import { Item, ItemActions, ItemContent, ItemDescription, ItemFooter, ItemGroup, ItemMedia, ItemTitle } from "@/components/ui/item";
 import { Separator } from "@/components/ui/separator";
 import { usePortableMediaDrive } from "@/lib/useDrives";
 import type { MediaLibraryTags } from "@/lib/libraryDb";
 import { useReadConfigFile, useReadFileJson } from "@/lib/useReadFile";
-import { DownloadIcon, PlayIcon, PodcastIcon } from "lucide-react";
+import { DownloadIcon, PlayIcon, Trash2Icon } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { Podcast } from "podparse";
 import { Usable, use, useEffect, useState } from "react";
@@ -28,12 +29,17 @@ function episodeExtension(item: Podcast["episodes"][number]) {
     return ({"audio/mpeg": ".mp3", "audio/mp4": ".m4a", "audio/aac": ".aac", "audio/ogg": ".ogg", "audio/opus": ".opus", "audio/wav": ".wav", "audio/flac": ".flac", "audio/x-m4a": ".m4a"} as Record<string, string>)[type] || ".mp3"
 }
 
-export default function EmptyPage({params}: {params: Usable<{encodedpodcasturl: string}>}) {
+export default function EmptyPage({params}: {params: Promise<{encodedpodcasturl: string}>}) {
     const {encodedpodcasturl} = use(params)
     const [podcast, setPodcast] = useState("")
     const [downloading, setDownloading] = useState<Record<string, boolean>>({})
     const [downloaded, setDownloaded] = useState<Record<string, string>>({})
     const [downloadErrors, setDownloadErrors] = useState<Record<string, string>>({})
+    const [deleting, setDeleting] = useState<Record<string, boolean>>({})
+    const [episodeToDelete, setEpisodeToDelete] = useState<Podcast["episodes"][number] | null>(null)
+    const [confirmUnsubscribe, setConfirmUnsubscribe] = useState(false)
+    const [unsubscribeError, setUnsubscribeError] = useState("")
+    const [unsubscribing, setUnsubscribing] = useState(false)
     const drive = usePortableMediaDrive({autoReload: true})
     const config = useReadConfigFile()
     const musicPath = config.data?.libraries.find(item => item.type === "music")?.path
@@ -107,6 +113,52 @@ export default function EmptyPage({params}: {params: Usable<{encodedpodcasturl: 
             setDownloading(current => ({...current, [key]: false}))
         }
     }
+
+    async function deleteEpisode(item: Podcast["episodes"][number]) {
+        const key = item.guid || item.enclosure.url
+        const file = downloaded[key]
+        if (!file || !musicPath || !window.fsPromises) return false
+        setDeleting(current => ({...current, [key]: true}))
+        setDownloadErrors(current => ({...current, [key]: ""}))
+        try {
+            await window.fsPromises.unlink(`${musicPath}/${file}`)
+            setDownloaded(current => {
+                const next = {...current}
+                delete next[key]
+                return next
+            })
+            return true
+        } catch (error) {
+            setDownloadErrors(current => ({...current, [key]: error instanceof Error ? error.message : "Delete failed"}))
+            return false
+        } finally {
+            setDeleting(current => ({...current, [key]: false}))
+        }
+    }
+
+    async function unsubscribe() {
+        if (!musicPath || !podcastdbPath || !window.fsPromises) return
+        setUnsubscribing(true)
+        setUnsubscribeError("")
+        try {
+            for (const file of Object.values(downloaded)) {
+                try {
+                    await window.fsPromises.unlink(`${musicPath}/${file}`)
+                } catch (error) {
+                    if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error
+                }
+            }
+            const db = JSON.parse(await window.fsPromises.readFile(podcastdbPath, "utf8")) as PodcastDb
+            const podcasts = {...db.podcasts}
+            delete podcasts[decodeURIComponent(encodedpodcasturl)]
+            await window.fsPromises.writeFile(podcastdbPath, JSON.stringify({...db, podcasts}))
+            router.push("/library/podcasts")
+        } catch (error) {
+            setUnsubscribeError(error instanceof Error ? error.message : "Could not unsubscribe")
+        } finally {
+            setUnsubscribing(false)
+        }
+    }
     return <div className="flex min-w-0 flex-col w-full h-full overflow-hidden">
         <div className="flex flex-col p-2 border-b-1">
             <Item>
@@ -121,12 +173,13 @@ export default function EmptyPage({params}: {params: Usable<{encodedpodcasturl: 
                         {show?.meta.owner.name}
                     </ItemDescription>
                 </ItemContent>
+                <Button variant="destructive" size="sm" disabled={!show || unsubscribing} onClick={() => { setUnsubscribeError(""); setConfirmUnsubscribe(true) }}>Unsubscribe</Button>
             </Item>
         </div>
         <div className="min-w-0 h-full overflow-x-hidden overflow-y-scroll">
             <div className="flex flex-col p-6 pt-4 border-b-1">
                 <h2 className="text-lg font-medium pb-2">Description</h2>
-                <ExpandableText text={show?.meta.description} />
+                <ExpandableText text={show?.meta.description ?? ""} />
             </div>
             <div className="flex flex-col p-4 pt-4 ">
                 <h2 className="text-lg font-medium pb-3 pl-2 pt-2">Episodes</h2>
@@ -140,9 +193,10 @@ export default function EmptyPage({params}: {params: Usable<{encodedpodcasturl: 
                                 </ItemMedia>
                                 <ItemContent className="min-w-0 flex-1 relative">
                                     {downloaded[item.guid || item.enclosure.url] ? (
-                                        <Button className="absolute right-2 top-1" onClick={() => playEpisode(item)}>
-                                            <PlayIcon />Play
-                                        </Button>
+                                        <div className="absolute right-2 top-1 flex gap-1">
+                                            <Button onClick={() => playEpisode(item)}><PlayIcon />Play</Button>
+                                            <Button variant="destructive" size="icon" aria-label={`Delete ${item.title || "episode"}`} title="Delete downloaded episode" disabled={deleting[item.guid || item.enclosure.url]} onClick={() => setEpisodeToDelete(item)}><Trash2Icon /></Button>
+                                        </div>
                                     ) : (
                                         <Button className="absolute right-2 top-1" disabled={!musicPath || downloading[item.guid || item.enclosure.url]} onClick={() => void downloadEpisode(item)}>
                                             <DownloadIcon />
@@ -167,5 +221,25 @@ export default function EmptyPage({params}: {params: Usable<{encodedpodcasturl: 
             </div>
             <div className="w-full h-[50px]" />
         </div>
+        <Dialog open={episodeToDelete !== null} onOpenChange={open => { if (!open) setEpisodeToDelete(null) }}>
+            <DialogContent>
+                <DialogHeader><DialogTitle>Delete downloaded episode?</DialogTitle><DialogDescription>This will permanently delete “{episodeToDelete?.title || "Episode"}” from your music library.</DialogDescription></DialogHeader>
+                {episodeToDelete && downloadErrors[episodeToDelete.guid || episodeToDelete.enclosure.url] && <p className="text-sm text-destructive">{downloadErrors[episodeToDelete.guid || episodeToDelete.enclosure.url]}</p>}
+                <DialogFooter>
+                    <Button variant="outline" onClick={() => setEpisodeToDelete(null)}>Cancel</Button>
+                    <Button variant="destructive" disabled={!episodeToDelete || deleting[episodeToDelete.guid || episodeToDelete.enclosure.url]} onClick={async () => { if (episodeToDelete && await deleteEpisode(episodeToDelete)) setEpisodeToDelete(null) }}><Trash2Icon />Delete episode</Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+        <Dialog open={confirmUnsubscribe} onOpenChange={setConfirmUnsubscribe}>
+            <DialogContent>
+                <DialogHeader><DialogTitle>Unsubscribe from {show?.meta.title || "this podcast"}?</DialogTitle><DialogDescription>This removes the podcast from your library and permanently deletes its downloaded episodes.</DialogDescription></DialogHeader>
+                {unsubscribeError && <p className="text-sm text-destructive">{unsubscribeError}</p>}
+                <DialogFooter>
+                    <Button variant="outline" disabled={unsubscribing} onClick={() => setConfirmUnsubscribe(false)}>Cancel</Button>
+                    <Button variant="destructive" disabled={unsubscribing} onClick={() => void unsubscribe()}><Trash2Icon />{unsubscribing ? "Unsubscribing…" : "Unsubscribe and delete"}</Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
     </div>
 }

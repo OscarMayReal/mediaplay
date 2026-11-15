@@ -4,11 +4,12 @@ import { TableHeader, TableRow, TableHead, TableBody, TableCell, Table } from "@
 import { toast } from "@/components/ui/toast"
 import { MediaLibraryTags, regenerateLibraryDb } from "@/lib/libraryDb"
 import { useReadConfigFile, useReadFileJson } from "@/lib/useReadFile"
-import { FocusNode } from "@please/lrud"
+import { FocusNode } from "@/components/focus"
 import { ArrowLeftCircleIcon, ListIcon, PlayIcon } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { Fragment, Usable, use, useEffect, useRef, useState } from "react"
 import { createPortal } from "react-dom"
+
 
 type MusicLibraryDb = {version: string; metadataStore: Record<string, MediaLibraryTags>};
 
@@ -28,7 +29,7 @@ const audioExtensions = [
   ".ape",
 ];
 
-export default function AlbumPage({params}: {params: Usable<{encodedalbum: string}>}) {
+export default function AlbumPage({params}: {params: Promise<{encodedalbum: string}>}) {
     const {encodedalbum} = use(params)
     const router = useRouter()
     const config = useReadConfigFile()
@@ -78,8 +79,8 @@ export default function AlbumPage({params}: {params: Usable<{encodedalbum: strin
             <FocusNode className="text-4xl text-muted-foreground [&.isFocused]:text-foreground [&.isFocused]:font-semibold flex flex-row items-center gap-3 animate-all" onSelected={() => {
                 if (!musicPath || !MediaPlayerContext || !MediaPlayerContext.audioPlayerRef.current) return
                 const newplaylist = []
-                for (const [itemkey, itemvalue] of Object.entries(library.data.metadataStore).filter(item => item[1].album == decodeURIComponent(encodedalbum))) {
-                    newplaylist.push({...itemvalue, path: itemkey, image: musicPath + "/MediaPlayDb/pictures/" + itemkey.replaceAll("/", "_"), type: "music", src: window.app.getLocalFileUrl(musicPath, itemkey)})
+                for (const [itemkey, itemvalue] of Object.entries(library.data!.metadataStore).filter(item => item[1].album == decodeURIComponent(encodedalbum))) {
+                    newplaylist.push({...itemvalue, path: itemkey, image: musicPath + "/MediaPlayDb/pictures/" + itemkey.replaceAll("/", "_"), type: "music" as const, src: window.app.getLocalFileUrl(musicPath, itemkey)})
                 }
                 MediaPlayerContext?.setPlaylist(newplaylist)
                 MediaPlayerContext?.setPlayerMetadata(newplaylist[0])
@@ -93,8 +94,8 @@ export default function AlbumPage({params}: {params: Usable<{encodedalbum: strin
             <FocusNode className="text-4xl text-muted-foreground [&.isFocused]:text-foreground [&.isFocused]:font-semibold flex flex-row items-center gap-3 animate-all" onSelected={() => {
                 if (!musicPath || !MediaPlayerContext || !MediaPlayerContext.audioPlayerRef.current) return
                 const newplaylist = MediaPlayerContext.playlist
-                for (const [itemkey, itemvalue] of Object.entries(library.data.metadataStore).filter(item => item[1].album == decodeURIComponent(encodedalbum))) {
-                    newplaylist.push({...itemvalue, path: itemkey, image: musicPath + "/MediaPlayDb/pictures/" + itemkey.replaceAll("/", "_"), type: "music", src: window.app.getLocalFileUrl(musicPath, itemkey)})
+                for (const [itemkey, itemvalue] of Object.entries(library.data!.metadataStore).filter(item => item[1].album == decodeURIComponent(encodedalbum))) {
+                    newplaylist.push({...itemvalue, path: itemkey, image: musicPath + "/MediaPlayDb/pictures/" + itemkey.replaceAll("/", "_"), type: "music" as const, src: window.app.getLocalFileUrl(musicPath, itemkey)})
                 }
                 MediaPlayerContext?.setPlaylist(newplaylist)
                 toast.add({
@@ -137,13 +138,13 @@ export default function AlbumPage({params}: {params: Usable<{encodedalbum: strin
                     </TableRow>
                 </TableHeader>
                 <TableBody>
-                    {Object.entries(library.data.metadataStore).filter(item => item[1].album == decodeURIComponent(encodedalbum)).map(([key, value]) => {
+                    {Object.entries(library.data!.metadataStore).filter(item => item[1].album == decodeURIComponent(encodedalbum)).map(([key, value]) => {
                         const playTrack = () => {
                             console.log(value)
                             const player = MediaPlayerContext?.audioPlayerRef.current
                             if (!player || !musicPath) return
-                            MediaPlayerContext.setPlayerMetadata({...value, path: key, image: musicPath + "/MediaPlayDb/pictures/" + key.replaceAll("/", "_"), type: "music", src: window.app.getLocalFileUrl(musicPath, key)})
-                            MediaPlayerContext.setPlaylist([{...value, path: key, image: musicPath + "/MediaPlayDb/pictures/" + key.replaceAll("/", "_"), type: "music", src: window.app.getLocalFileUrl(musicPath, key)}])
+                            MediaPlayerContext.setPlayerMetadata({...value, path: key, image: musicPath + "/MediaPlayDb/pictures/" + key.replaceAll("/", "_"), type: "music" as const, src: window.app.getLocalFileUrl(musicPath, key)})
+                            MediaPlayerContext.setPlaylist([{...value, path: key, image: musicPath + "/MediaPlayDb/pictures/" + key.replaceAll("/", "_"), type: "music" as const, src: window.app.getLocalFileUrl(musicPath, key)}])
                             MediaPlayerContext.setPlaylistPos(0)
                             player.src = window.app.getLocalFileUrl(musicPath, key)
                             void player.play()
@@ -170,7 +171,7 @@ export default function AlbumPage({params}: {params: Usable<{encodedalbum: strin
                                 addToQueue()
                                 setMenuTrack(null)
                             } else if (!heldTrack.current) playTrack()
-                        }} onClick={() => { if (!didLongPress.current) playTrack(); didLongPress.current = false }} onPointerDown={startHold} onPointerUp={cancelHold} onPointerLeave={cancelHold} onContextMenu={(event) => { event.preventDefault(); setMenuTrack(key) }} onKey={event => {
+                        }} onClick={() => { if (!didLongPress.current) playTrack(); didLongPress.current = false }} onPointerDown={startHold} onPointerUp={cancelHold} onPointerLeave={cancelHold} onContextMenu={(event: React.MouseEvent) => { event.preventDefault(); setMenuTrack(key) }} onKey={(event: any) => {
                             if (menuTrack === key) {
                                 event.preventDefault()
                                 event.stopPropagation()
@@ -182,7 +183,7 @@ export default function AlbumPage({params}: {params: Usable<{encodedalbum: strin
                             if (heldTrack.current) return
                             heldTrack.current = {key, play: playTrack}
                             startHold()
-                        }} onFocused={({currentNode}) => currentNode.elRef.current?.scrollIntoView({block: "nearest"})}>
+                        }} onFocused={({currentNode}: any) => currentNode.elRef.current?.scrollIntoView({block: "nearest"})}>
                             <TableHead className="w-12">
                             </TableHead>
                             <TableCell>

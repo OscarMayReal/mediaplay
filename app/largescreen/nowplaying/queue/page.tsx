@@ -4,11 +4,12 @@ import { TableHeader, TableRow, TableHead, TableBody, TableCell, Table } from "@
 import { toast } from "@/components/ui/toast"
 import { MediaLibraryTags, regenerateLibraryDb } from "@/lib/libraryDb"
 import { useReadConfigFile, useReadFileJson } from "@/lib/useReadFile"
-import { FocusNode } from "@please/lrud"
+import { FocusNode } from "@/components/focus"
 import { ArrowLeftCircleIcon, ListIcon, PlayIcon, XIcon } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { Fragment, Usable, use, useEffect, useRef, useState } from "react"
 import { createPortal } from "react-dom"
+
 
 type MusicLibraryDb = {version: string; metadataStore: Record<string, MediaLibraryTags>};
 
@@ -125,13 +126,14 @@ export default function AlbumPage() {
                             MediaPlayerContext.setPlayerMetadata(MediaPlayerContext.playlist[index])
                             MediaPlayerContext.setPlaylistPos(index)
                         }
-                        const track = {...item, path: item.path, image: musicPath + "/MediaPlayDb/pictures/" + item.path.replaceAll("/", "_"), type: "music" as const, src: window.app.getLocalFileUrl(musicPath!, item.path)}
+                        const itemPath: string = item.path ?? ""
+                        const track = {...item, path: itemPath, image: musicPath + "/MediaPlayDb/pictures/" + itemPath.replaceAll("/", "_"), type: "music" as const, src: window.app.getLocalFileUrl(musicPath!, itemPath)}
                         const addToQueue = () => MediaPlayerContext?.setPlaylist([...MediaPlayerContext.playlist, track])
                         const startHold = () => {
                             didLongPress.current = false
                             holdTimer.current = setTimeout(() => {
                                 didLongPress.current = true
-                                setMenuTrack(item.path)
+                                setMenuTrack(itemPath)
                                 holdTimer.current = null
                             }, 550)
                         }
@@ -139,16 +141,16 @@ export default function AlbumPage() {
                             if (holdTimer.current) clearTimeout(holdTimer.current)
                             holdTimer.current = null
                         }
-                        return <Fragment key={item.path}>
-                        <FocusNode elementType="tr" orientation="horizontal" className={(MediaPlayerContext?.playerMetadata?.path == item.path ? "bg-foreground/5 hover:bg-foreground/5" : "even:bg-foreground/2") + " scroll-mt-[42px] border-transparent hover:bg-foreground/5 text-xl [&.isFocused]:bg-foreground/10"} onSelected={() => {
+                        return <Fragment key={itemPath}>
+                        <FocusNode elementType="tr" orientation="horizontal" className={(MediaPlayerContext?.playerMetadata?.path == itemPath ? "bg-foreground/5 hover:bg-foreground/5" : "even:bg-foreground/2") + " scroll-mt-[42px] border-transparent hover:bg-foreground/5 text-xl [&.isFocused]:bg-foreground/10"} onSelected={() => {
                             // LRUD emits select again for repeated Enter keydowns. Ignore those
                             // while the original hold is still down, or they would dismiss the menu.
-                            if (menuTrack === item.path && !heldTrack.current) {
+                            if (menuTrack === itemPath && !heldTrack.current) {
                                 addToQueue()
                                 setMenuTrack(null)
                             } else if (!heldTrack.current) playTrack()
-                        }} onClick={() => { if (!didLongPress.current) playTrack(); didLongPress.current = false }} onPointerDown={startHold} onPointerUp={cancelHold} onPointerLeave={cancelHold} onContextMenu={(event) => { event.preventDefault(); setMenuTrack(key) }} onKey={event => {
-                            if (menuTrack === item.path) {
+                        }} onClick={() => { if (!didLongPress.current) playTrack(); didLongPress.current = false }} onPointerDown={startHold} onPointerUp={cancelHold} onPointerLeave={cancelHold} onContextMenu={(event: React.MouseEvent) => { event.preventDefault(); setMenuTrack(itemPath) }} onKey={(event: any) => {
+                            if (menuTrack === itemPath) {
                                 event.preventDefault()
                                 event.stopPropagation()
                                 if (event.key === "back") setMenuTrack(null)
@@ -157,9 +159,9 @@ export default function AlbumPage() {
                             if (event.key !== "select") return
                             event.preventDefault()
                             if (heldTrack.current) return
-                            heldTrack.current = {key: item.path, play: playTrack}
+                            heldTrack.current = {key: itemPath, play: playTrack}
                             startHold()
-                        }} onFocused={({currentNode}) => currentNode.elRef.current?.scrollIntoView({block: "nearest"})}>
+                        }} onFocused={({currentNode}: any) => currentNode.elRef.current?.scrollIntoView({block: "nearest"})}>
                             <TableHead className="w-12">
                             </TableHead>
                             <TableCell>
@@ -177,7 +179,7 @@ export default function AlbumPage() {
                             <TableHead className="w-12">
                             </TableHead>
                         </FocusNode>
-                        {/* {menuTrack === item.path && typeof document !== "undefined" && createPortal(
+                        {/* {menuTrack === itemPath && typeof document !== "undefined" && createPortal(
                             <div className="fixed inset-0 z-50 grid place-items-center bg-black/40">
                                 <div role="menu" className="min-w-80 rounded-lg bg-popover p-2 text-popover-foreground shadow-xl">
                                     <button type="button" role="menuitem" className="flex w-full items-center gap-3 rounded-md px-5 py-4 text-3xl hover:bg-accent focus:bg-accent" onClick={() => { addToQueue(); setMenuTrack(null) }}><XIcon className="size-7" />Remove from queue</button>

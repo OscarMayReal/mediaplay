@@ -15,7 +15,7 @@ import { usePathname, useRouter } from "next/navigation";
 
 type PodcastDb = {version: string; podcasts: Record<string, any>};
 
-export default function LibraryPage({children}: {children: React.JSX.Element}) {
+export default function LibraryPage({children}: {children: React.ReactNode}) {
     const [podcastUrl, setPodcastUrl] = useState("")
     const [podcastLibrary, setPodcastLibary] = useState<null | any>(null)
     const drive = usePortableMediaDrive({autoReload: true})
@@ -100,7 +100,7 @@ export default function LibraryPage({children}: {children: React.JSX.Element}) {
             <ItemGroup className="gap-0">
                 {Object.entries(podcastLibrary?.podcasts || {}).map((data) => {
                     const key: string = data[0]
-                    const value: Podcast = data[1]
+                    const value = data[1] as Podcast
                     return <Item key={key} className={`hover:bg-foreground/3 ${pathname == "/library/podcasts/" + encodeURIComponent(key) ? "bg-foreground/5 hover:bg-foreground/5" : ""}`} onClick={() => {
                         router.push("/library/podcasts/" + encodeURIComponent(key))
                     }}>

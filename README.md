@@ -41,3 +41,8 @@ xattr -cr /Applications/Mediaplay.app
 ```
 
 Then open Mediaplay again. If macOS shows a standard security warning instead, Control-click the app in Applications, choose **Open**, and confirm **Open** in the dialog.
+
+## Using Large Secreen Mode without a mouse
+Large Screen Mode is a feature that allows you to have an experience designed for large screens (such as a TV)
+
+you can usually launch it from the "more" menu at the right of the header. if you cannot open this menu (for example, your device does not have a mouse attached, and you want to autostart Large Screen Mode), you can pass the `--large-screen` argument, and MediaPlay will launch directly into Large Screen Mode

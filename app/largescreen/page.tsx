@@ -1,6 +1,6 @@
 "use client"
 import { useMediaPlayerContext } from "@/components/mediaPlayerContext"
-import { FocusNode } from "@please/lrud"
+import { FocusNode } from "@/components/focus"
 import { MusicIcon, PlayIcon, PodcastIcon, SettingsIcon, VideoIcon } from "lucide-react"
 import { useRouter } from "next/navigation"
 
