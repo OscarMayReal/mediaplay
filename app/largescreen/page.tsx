@@ -15,7 +15,7 @@ export default function LargeScreenHome() {
             <FocusNode className="text-4xl text-muted-foreground [&.isFocused]:text-foreground [&.isFocused]:font-semibold flex flex-row items-center gap-3 animate-all" onSelected={() => router.push("/largescreen/video")}>
                 <VideoIcon size={30} />Video
             </FocusNode>
-            <FocusNode className="text-4xl text-muted-foreground [&.isFocused]:text-foreground [&.isFocused]:font-semibold flex flex-row items-center gap-3 animate-all">
+            <FocusNode className="text-4xl text-muted-foreground [&.isFocused]:text-foreground [&.isFocused]:font-semibold flex flex-row items-center gap-3 animate-all" onSelected={() => router.push("/largescreen/podcasts")}>
                 <PodcastIcon size={30} />Podcasts
             </FocusNode>
             <FocusNode className="text-4xl text-muted-foreground [&.isFocused]:text-foreground [&.isFocused]:font-semibold flex flex-row items-center gap-3 animate-all" onSelected={() => router.push("/largescreen/settings")}>
