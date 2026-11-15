@@ -1,6 +1,6 @@
 import { app, BrowserWindow, dialog, ipcMain, net, protocol, shell, utilityProcess } from "electron"
 import { createReadStream, createWriteStream } from "node:fs"
-import { mkdir, rm, stat } from "node:fs/promises"
+import { mkdir, readFile, rm, stat } from "node:fs/promises"
 import { Readable } from "node:stream"
 import { pipeline } from "node:stream/promises"
 import { createServer } from "node:net"
@@ -12,6 +12,7 @@ protocol.registerSchemesAsPrivileged([
 ])
 
 let serverProcess
+let mediaServerProcess
 let serverExited = false
 let serverUrl
 let appOrigin
@@ -20,6 +21,16 @@ const libraryPaths = new Set(["music", "videos", "pictures", "documents", "downl
 
 ipcMain.on("app:getLibraryPath", (event, name) => {
   event.returnValue = libraryPaths.has(name) ? app.getPath(name) : null
+})
+
+ipcMain.on("app:quit", () => {
+  app.quit()
+})
+
+ipcMain.on("app:setMediaServerEnabled", (_event, enabled) => {
+  if (typeof enabled !== "boolean") return
+  if (enabled) startMediaServer()
+  else stopMediaServer()
 })
 
 ipcMain.handle("app:openWindow", async (_event, route) => {
@@ -71,6 +82,38 @@ function availablePort() {
       server.close(() => resolve(port))
     })
   })
+}
+
+function startMediaServer() {
+  if (mediaServerProcess) return
+  const mediaServerPath = app.isPackaged
+    ? path.join(process.resourcesPath, "mediaserver.mjs")
+    : path.join(app.getAppPath(), "electron/mediaserver.mjs")
+  const child = utilityProcess.fork(mediaServerPath, [], {
+    cwd: app.getAppPath(),
+    stdio: "inherit",
+    serviceName: "MediaPlay media server",
+  })
+  mediaServerProcess = child
+  child.once("exit", (code) => {
+    if (mediaServerProcess === child) mediaServerProcess = null
+    if (code !== 0 && code !== null) console.error(`MediaPlay media server exited with code ${code}`)
+  })
+}
+
+function stopMediaServer() {
+  mediaServerProcess?.kill()
+  mediaServerProcess = null
+}
+
+async function isMediaServerEnabled() {
+  try {
+    const configPath = path.join(app.getPath("documents"), "MediaPlay", "library.json")
+    const config = JSON.parse(await readFile(configPath, "utf8"))
+    return config.mediaServerEnabled !== false
+  } catch {
+    return true
+  }
 }
 
 async function waitForServer(url) {
@@ -159,7 +202,8 @@ async function createWindow(route = "/") {
   await window.loadURL(new URL(route, url).toString())
 }
 
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
+  if (await isMediaServerEnabled()) startMediaServer()
   protocol.handle("localfile", async (request) => {
     try {
       const mediaUrl = new URL(request.url)
@@ -220,4 +264,5 @@ app.on("window-all-closed", () => {
 
 app.on("before-quit", () => {
   serverProcess?.kill()
+  stopMediaServer()
 })

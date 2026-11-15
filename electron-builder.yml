@@ -7,6 +7,8 @@ files:
   - electron/preload.cjs
   - package.json
 extraResources:
+  - from: electron/mediaserver.mjs
+    to: mediaserver.mjs
   - from: .next/standalone
     to: server
   - from: .next/standalone/node_modules

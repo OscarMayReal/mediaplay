@@ -4,6 +4,7 @@ import { getLibraries } from "./getLibraries";
 export type LibraryConfig = {
     libraries: { type: string; path: string; name: string }[];
     libraryLocations?: Record<string, string>;
+    mediaServerEnabled?: boolean;
 };
 
 export function useReadFileJson<T>({path}: {path: string | null | undefined}) {

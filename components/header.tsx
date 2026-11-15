@@ -1,11 +1,11 @@
 "use client"
 import { ButtonGroup } from "./ui/button-group";
 import { Button } from "./ui/button";
-import { CableIcon, FastForwardIcon, FolderCogIcon, FullscreenIcon, LibraryBigIcon, ListIcon, MonitorIcon, MoonIcon, MoreHorizontalIcon, MusicIcon, PauseIcon, PlayIcon, RewindIcon, SettingsIcon, SquareArrowOutUpRightIcon, SunIcon, XIcon } from "lucide-react";
-import { useState } from "react";
+import { CableIcon, FastForwardIcon, FolderCogIcon, FullscreenIcon, LibraryBigIcon, ListIcon, MonitorIcon, MoonIcon, MoreHorizontalIcon, MusicIcon, PauseIcon, PlayCircleIcon, PlayIcon, RewindIcon, SettingsIcon, SquareArrowOutUpRightIcon, SunIcon, XIcon } from "lucide-react";
+import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { useDrives } from "@/lib/useDrives";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuSeparator, DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger, DropdownMenuTrigger } from "./ui/dropdown-menu";
+import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuItem, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuSeparator, DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger, DropdownMenuTrigger } from "./ui/dropdown-menu";
 import { Item, ItemContent, ItemDescription, ItemGroup, ItemMedia, ItemTitle } from "./ui/item";
 import { useMediaPlayerContext } from "./mediaPlayerContext";
 import { Slider } from "./ui/slider";
@@ -13,6 +13,8 @@ import { Progress } from "./ui/progress";
 import { ManageLibrariesDialog } from "./manageLibrariesDialog";
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
 import { useTheme } from "next-themes";
+import { getLibraries } from "@/lib/getLibraries";
+import { useReadConfigFile } from "@/lib/useReadFile";
 
 function formatTime(seconds: number) {
     const totalSeconds = Math.floor(seconds)
@@ -24,12 +26,35 @@ export default function AppHeader() {
     const mediaPlayerContext = useMediaPlayerContext()
     const router = useRouter()
     const drives = useDrives({autoReload: true})
+    const libraryConfig = useReadConfigFile()
+    const mediaServerEnabled = libraryConfig.data?.mediaServerEnabled ?? true
     const pathName = usePathname()
     const [manageLibrariesOpen, setManageLibrariesOpen] = useState(false)
+    const [isFullScreen, setIsFullScreen] = useState(false)
+    const toggleMediaServer = async () => {
+        const libraries = getLibraries()
+        if (!libraries || !window.fsPromises) return
+        const configPath = libraries.documents + "/MediaPlay/library.json"
+        let config: Record<string, any> = {}
+        try {
+            config = JSON.parse(await window.fsPromises.readFile(configPath, "utf8"))
+        } catch {}
+        config.mediaServerEnabled = !mediaServerEnabled
+        await window.fsPromises.writeFile(configPath, JSON.stringify(config, null, 2))
+        window.electronAPI?.setMediaServerEnabled(!mediaServerEnabled)
+        libraryConfig.reload()
+    }
+    useEffect(() => {
+        if (!window.electronAPI) return
+        return window.electronAPI.onWindowStateChange((state) => {
+            if (state === "enter-full-screen") setIsFullScreen(true)
+            if (state === "leave-full-screen") setIsFullScreen(false)
+        })
+    }, [])
     if (pathName.startsWith("/videoPlayer") || pathName.startsWith("/largescreen")) return null
     return (
         <header className="h-[50px] bg-muted border-b-1 w-full flex flex-row items-center titlebar shrink-0 relative">
-            <ButtonGroup className="ml-22 nodrag">
+            <ButtonGroup className={`${isFullScreen ? "ml-2" : "ml-22"} nodrag`}>
                 <Button variant="outline" size="icon" aria-label="Rewind 10 seconds" onClick={() => {
                     if (!mediaPlayerContext) return
                     mediaPlayerContext.seek(mediaPlayerContext.playerState.time - 10)
@@ -104,6 +129,7 @@ export default function AppHeader() {
                     <DropdownMenuTrigger render={<Button variant="outline" size="icon" className="mr-2 nodrag" aria-label="Manage libraries"><MoreHorizontalIcon /></Button>} />
                     <DropdownMenuContent align="end" className="w-auto">
                         <DropdownMenuItem onClick={() => setManageLibrariesOpen(true)}><FolderCogIcon />Manage libraries</DropdownMenuItem>
+                        <DropdownMenuCheckboxItem onClick={() => void toggleMediaServer()} checked={mediaServerEnabled}><CableIcon />Media server</DropdownMenuCheckboxItem>
                         <DropdownMenuSub>
                             <DropdownMenuSubTrigger>
                                 {theme.theme == "light" && <><SunIcon />Light Theme</>}
@@ -128,7 +154,7 @@ export default function AppHeader() {
                             window.app.openWindow("/largescreen")
                         }}><FullscreenIcon />Large Screen Mode</DropdownMenuItem>
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem variant="destructive"><XIcon />Quit</DropdownMenuItem>
+                        <DropdownMenuItem variant="destructive" onClick={() => window.electronAPI?.quit()}><XIcon />Quit</DropdownMenuItem>
                     </DropdownMenuContent>
                 </DropdownMenu>
             </ButtonGroup>
@@ -143,7 +169,7 @@ function HeaderMediaArea() {
     const time = seekingTime ?? mediaPlayerContext?.playerState.time ?? 0
     const duration = mediaPlayerContext?.playerState.duration ?? 0
     return <div className="w-[450px] h-full border-x-1 bg-background/50 absolute left-1/2 -translate-x-[50%] flex flex-row items-center">
-        {mediaPlayerContext?.playerMetadata !== null && <Item className="flex flex-row w-fit flex-nowrap p-0">
+        {mediaPlayerContext?.playerMetadata !== null ? <Item className="flex flex-row w-fit flex-nowrap p-0">
             <ItemMedia className="rounded-md border-1 bg-muted h-[35px] w-[35px] mr-0 ml-2 mt-0 overflow-hidden">
                 {!mediaPlayerContext?.playerMetadata.pictureLoc ? <MusicIcon size={20} /> :
                 <img src={window.app.getLocalFileUrl(mediaPlayerContext.playerMetadata.pictureLoc, "")} alt="" />}
@@ -152,11 +178,11 @@ function HeaderMediaArea() {
                 <ItemTitle className="text-nowrap">{mediaPlayerContext?.playerMetadata.title}</ItemTitle>
                 <ItemDescription className="text-nowrap">{mediaPlayerContext?.playerMetadata.artist}</ItemDescription>
             </ItemContent>
-        </Item>}
+        </Item> : <PlayCircleIcon className="absolute left-1/2 -translate-x-[50%] text-foreground/50" />}
         {mediaPlayerContext?.playerMetadata && <span className="ml-auto mr-2 shrink-0 text-xs tabular-nums text-muted-foreground">
             {formatTime(time)} / {formatTime(duration)}
         </span>}
-        <Progress
+        {/* <Progress
             min={0}
             max={Math.max(duration, 1)}
             // step={1}
@@ -171,6 +197,22 @@ function HeaderMediaArea() {
             // }}
             aria-label="Playback position"
             className="w-full absolute bottom-0 rounded-none nodrag"
-        />
+        /> */}
+        {mediaPlayerContext?.playerMetadata && <Slider
+            min={0}
+            max={Math.max(duration, 1)}
+            step={1}
+            disabled={duration <= 0}
+            value={Math.min(time, Math.max(duration, 1))}
+            onValueChange={(value) => {
+                if (typeof value === "number") setSeekingTime(value)
+            }}
+            onValueCommitted={(value) => {
+                if (typeof value === "number") mediaPlayerContext?.seek(value)
+                setSeekingTime(null)
+            }}
+            aria-label="Playback position"
+            className="w-full absolute bottom-0 rounded-none nodrag"
+        />}
     </div>
 }

@@ -20,6 +20,8 @@ const app = {
 
 window.electronAPI = {
   platform: process.platform,
+  quit: () => ipcRenderer.send("app:quit"),
+  setMediaServerEnabled: (enabled: boolean) => ipcRenderer.send("app:setMediaServerEnabled", enabled),
   onWindowStateChange: (callback: (event: WindowStateEvent) => void) => {
     const listener = (_event: Electron.IpcRendererEvent, state: WindowStateEvent) => callback(state)
     ipcRenderer.on("window:state-changed", listener)
@@ -41,6 +43,8 @@ declare global {
   interface Window {
     electronAPI: {
       platform: NodeJS.Platform
+      quit: () => void
+      setMediaServerEnabled: (enabled: boolean) => void
       onWindowStateChange: (callback: (event: WindowStateEvent) => void) => () => void
     },
     drivelist: typeof drivelist,

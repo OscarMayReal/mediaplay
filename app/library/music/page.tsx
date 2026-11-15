@@ -53,7 +53,18 @@ export default function LibraryPage() {
                     }}><RotateCcwIcon />Rescan Library</DropdownMenuItem>
                 </DropdownMenuContent>
             </DropdownMenu>
-            <Button><PlayIcon />Play All</Button>
+            <Button onClick={() => {
+                if (!musicPath || !MediaPlayerContext || !MediaPlayerContext.audioPlayerRef.current) return
+                const newplaylist = []
+                for (const [itemkey, itemvalue] of Object.entries(library.data.metadataStore)) {
+                    newplaylist.push({...itemvalue, path: itemkey, image: musicPath + "/MediaPlayDb/pictures/" + itemkey.replaceAll("/", "_"), type: "music", src: window.app.getLocalFileUrl(musicPath, itemkey)})
+                }
+                MediaPlayerContext?.setPlaylist(newplaylist)
+                MediaPlayerContext?.setPlayerMetadata(newplaylist[0])
+                MediaPlayerContext?.setPlaylistPos(0)
+                MediaPlayerContext.audioPlayerRef.current.src = newplaylist[0].src
+                void MediaPlayerContext.audioPlayerRef.current.play()
+            }}><PlayIcon />Play All</Button>
         </div>
         <div className="flex flex-col p-0 pt-0 overflow-scroll max-h-full relative">
             {library.data && <Table className="mb-18">
